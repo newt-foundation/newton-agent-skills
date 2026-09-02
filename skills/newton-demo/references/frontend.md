@@ -90,8 +90,8 @@ against `target` before the attested write. Do not hard-code a token symbol.
 | Name | Where | Notes |
 |---|---|---|
 | `NEWTON_API_KEY` | Server env | Required. Never `NEXT_PUBLIC_` |
-| `NEXT_PUBLIC_RPC_URL` | Build / client | Optional public RPC |
-| `RPC_URL` | Server env | Optional; Route Handler falls back to `NEXT_PUBLIC_RPC_URL` then the chain default |
+| `NEXT_PUBLIC_RPC_URL` | Build / client | Optional public RPC. Ethereum Sepolia default: `https://ethereum-sepolia-rpc.publicnode.com` |
+| `RPC_URL` | Server env | Optional; Route Handler falls back to `NEXT_PUBLIC_RPC_URL`, then the Sepolia public URL above, then the chain default |
 
 Do not add `NEXT_PUBLIC_NEWTON_API_KEY`. Production deploy, preview URLs,
 and custom domains are out of scope until the user asks.

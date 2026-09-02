@@ -3,6 +3,14 @@
 Use only after local compile + required tests pass, and only with explicit
 user approval for live transactions.
 
+## RPC
+
+Reuse `RPC_URL` from the process environment or `~/.newton/.env`. If it is
+unset and the chain is Ethereum Sepolia (`11155111`), use
+`https://ethereum-sepolia-rpc.publicnode.com`. Do not invent other RPC hosts
+or credential-bearing URLs. If that public endpoint rate-limits, ask the
+user to inject their own `RPC_URL` outside chat.
+
 ## Protocol addresses
 
 Do not invent TaskManager or registry addresses.

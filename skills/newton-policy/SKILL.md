@@ -27,18 +27,24 @@ Determine the requested outcome before running commands:
 3. **Live deployment:** finish the local loop, then upload artifacts and submit
    transactions after an explicit deployment confirmation.
 
-If live deployment is in scope, disclose its eventual prerequisites at the
-start so they are not a surprise:
+On the first turn, tell the user they will eventually need (names only; do
+not ask for values yet):
 
+- A funded local `PRIVATE_KEY` in the process environment or `~/.newton/.env`
+  (CLI / Foundry deploys; not the dashboard login wallet)
+- A Newton gateway API key from `newton-cli keys` (secrets upload and live
+  evaluate; not required for local simulate)
 - Target chain/environment
-- RPC endpoint
-- Funded signing method (the current CLI flow uses `PRIVATE_KEY`)
-- IPFS upload route: Newton proxy, or direct Pinata using both `PINATA_JWT` and
-  `PINATA_GATEWAY`
+- RPC endpoint. On Ethereum Sepolia (`11155111`), this skill uses
+  `https://ethereum-sepolia-rpc.publicnode.com` unless `RPC_URL` is already
+  set. Do not ask the user for a Sepolia URL.
+- IPFS upload route: Newton proxy, or direct Pinata using both `PINATA_JWT`
+  and `PINATA_GATEWAY`
 
-In that same disclosure, name the durable injection site: the process
-environment or `~/.newton/.env`. Do not ask for values yet. Do not tell the
-user to populate deploy secrets at install, `doctor`, login, or scaffold.
+Name the durable injection site: the process environment or
+`~/.newton/.env`. Do not tell the user to populate deploy secrets at
+install, `doctor`, login, or scaffold. Local scaffold/build/simulate can
+proceed before those exist.
 
 Do not request secret values in chat or block local work merely because deploy
 configuration is not ready. Collect/verify missing configuration at the
@@ -49,7 +55,9 @@ deployment checkpoint after local allow/deny simulation passes.
 Use for creating or testing policy logic:
 
 1. Install / verify `newton-cli`
-2. Run `newton-cli doctor`
+2. Put npm-global `bin` on `PATH`, then run `newton-cli doctor` (see
+   [setup-and-auth.md](references/setup-and-auth.md); doctor finding `jco`
+   is not enough if `jco` is missing from `PATH`)
 3. Scaffold
 4. Author `policy.js`, `policy.rego`, configs, and schemas; review the
    scaffolded non-secret `configs/deployment.toml`
@@ -115,15 +123,17 @@ then rerun `newton-cli login`.
   binary, another repo checkout, or shell rc files. A custom `newton-cli`
   path does not change where secrets are loaded from.
 - For live deployment, at the deploy checkpoint ask the user to inject missing
-  `PRIVATE_KEY`, credential-bearing `RPC_URL`, and `PINATA_JWT` into the
-  process environment or `~/.newton/.env`. Verify only whether required
-  variables are set; never print their values.
+  `PRIVATE_KEY` and `PINATA_JWT` into the process environment or
+  `~/.newton/.env`. On Sepolia, use the public RPC above if `RPC_URL` is
+  unset; on other chains, ask them to inject `RPC_URL` the same way. Verify
+  only whether required variables are set; never print their values.
 - For headless/CI login, the user must provide `NEWTON_ACCESS_TOKEN` through the
   process environment or `~/.newton/.env`; do not put the token directly in a
   command argument.
 - Never perform browser signup, wallet linking, or signing on the user's behalf.
-- Never invent private keys, RPC URLs, contract addresses, chain IDs, or
-  expiration values.
+- Never invent private keys, credential-bearing RPC URLs, contract addresses,
+  chain IDs, or expiration values. Ethereum Sepolia may use
+  `https://ethereum-sepolia-rpc.publicnode.com` when `RPC_URL` is unset.
 
 ## Core policy sequence
 

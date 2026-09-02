@@ -5,8 +5,10 @@ This repository is the canonical home for Newton Agent Skills.
 ## Layout
 
 - Canonical skill trees live under `skills/<skill-name>/`.
-- `.agents/` is gitignored. For local Cursor/Codex discovery, symlink
-  `ln -sfn ../skills .agents/skills`.
+- `.agents/` is gitignored. Codex and Cursor discover repository skills from
+  `.agents/skills` (Codex also loads `$HOME/.agents/skills`). For local
+  discovery, symlink `ln -sfn ../skills .agents/skills`. Codex install
+  details: README "Use in Codex".
 - Each skill is a folder with `SKILL.md` (required) and optional `references/`, `templates/`, `scripts/`, and `assets/`.
 
 ## Adding a skill
@@ -30,7 +32,9 @@ handoff JSON. `newton-demo/templates/` holds a lite Next.js app and
 
 - Never ask the user to paste a dashboard JWT, private key, API key, or RPC credential into chat.
 - Never commit secrets, private keys, JWTs, or a project-local `.env`.
-- Do not invent private keys, RPC URLs, contract addresses, chain IDs, or expiration values.
+- Do not invent private keys, credential-bearing RPC URLs, contract addresses, chain IDs, or expiration values.
+- Ethereum Sepolia (`11155111`) may use the documented public RPC
+  `https://ethereum-sepolia-rpc.publicnode.com` when `RPC_URL` is unset.
 
 ## What not to put here
 

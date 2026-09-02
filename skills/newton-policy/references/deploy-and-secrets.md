@@ -8,9 +8,13 @@ to deploy or run live evaluation.
 When live deployment is requested, state at the beginning that deployment will
 eventually need:
 
+- A funded local `PRIVATE_KEY` (process environment or `~/.newton/.env`)
+- A Newton gateway API key from `newton-cli keys` (secrets / live evaluate)
 - `CHAIN_ID`
-- `RPC_URL`
-- A funded signing method (the current CLI commands below use `PRIVATE_KEY`)
+- `RPC_URL`. Ethereum Sepolia (`11155111`) defaults to the public endpoint
+  `https://ethereum-sepolia-rpc.publicnode.com`. Do not ask the user for a
+  Sepolia URL. Prefer an already-set `RPC_URL`. If that public endpoint
+  rate-limits, ask them to inject their own URL outside chat.
 - An IPFS route:
   - Newton proxy: default; no Pinata credentials
   - Direct Pinata: both `PINATA_JWT` and `PINATA_GATEWAY`
@@ -32,11 +36,15 @@ After local simulation passes and before the first upload or transaction:
    environment, or `~/.newton/.env`. Do not search other files.
 3. Identify only the missing requirements. Verify secret-bearing environment
    variables by presence without printing their values.
-4. If `PRIVATE_KEY`, credential-bearing `RPC_URL`, or (when using direct
-   Pinata) `PINATA_JWT` / `PINATA_GATEWAY` are missing from both the process
-   environment and `~/.newton/.env`, **stop**. Ask the user to inject them
-   outside chat into the process environment or `~/.newton/.env`. Resume only
-   after a presence check succeeds.
+4. If `PRIVATE_KEY` or (when using direct Pinata) `PINATA_JWT` /
+   `PINATA_GATEWAY` are missing from both the process environment and
+   `~/.newton/.env`, **stop**. Ask the user to inject them outside chat into
+   the process environment or `~/.newton/.env`. Resume only after a presence
+   check succeeds. If `RPC_URL` is unset and the target is Ethereum Sepolia
+   (`11155111`), use `https://ethereum-sepolia-rpc.publicnode.com` for this
+   session. If `RPC_URL` is unset on any other chain, **stop** and ask the
+   user to inject it the same way. A credential-bearing RPC (API key in the
+   URL) is still a secret; never print it.
 5. Ask for non-secret choices such as chain/environment and IPFS route when
    they cannot be inferred.
 6. Summarize the target chain, planned uploads, and transactions, then obtain
@@ -52,9 +60,12 @@ Do not source or read:
 A custom CLI path does not change this lookup. An empty `~/.newton/.env` is
 missing credentials, not a source to use.
 
-Never invent values. Do not print or commit credentials. Login/API-key setup is
-required for gateway operations such as secrets/live evaluate, but not inherently
-for scaffold/build/local simulation or Newton-proxy IPFS upload.
+Never invent private keys, credential-bearing RPC URLs, contract addresses,
+chain IDs, or expiration values. The public Sepolia RPC above is the allowed
+exception when `RPC_URL` is unset on `11155111`. Do not print or commit
+credentials. Login/API-key setup is required for gateway operations such as
+secrets/live evaluate, but not inherently for scaffold/build/local simulation
+or Newton-proxy IPFS upload.
 
 Policy lifecycle commands do not require the legacy full
 `~/.newton/newton-cli.toml`. With `-p <policy-dir>`, `policy deploy`

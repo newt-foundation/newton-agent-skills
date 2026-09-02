@@ -27,19 +27,24 @@ vaults, wallets) unless the user specifies one.
 2. **Live wiring:** after tests pass, deploy the client and bind Policy /
    registry only with explicit user confirmation.
 
-If live work is in scope, disclose eventual prerequisites at the start:
+On the first turn, tell the user they will eventually need (names only; do
+not ask for values yet):
 
+- A funded local `PRIVATE_KEY` in the process environment or `~/.newton/.env`
+  (`forge` / `cast` deploy; not the dashboard login wallet)
+- A Newton gateway API key from `newton-cli keys` (live `newt_createTask`)
 - Target chain/environment
-- RPC endpoint
-- Funded local signing method (`PRIVATE_KEY` for `forge` / `cast`)
+- RPC endpoint. On Ethereum Sepolia (`11155111`), this skill uses
+  `https://ethereum-sepolia-rpc.publicnode.com` unless `RPC_URL` is already
+  set. Do not ask the user for a Sepolia URL.
 - The `newton-cli login` wallet address (dashboard / Turnkey / MetaMask). That
   wallet must become PolicyClient owner so gateway secrets and live evaluate
   resolve. This skill cannot sign as that wallet.
 - TaskManager and Policy addresses
 - Whether PolicyClientRegistry registration is required
 
-Do not ask for secret values yet. Do not invent contract addresses, chain IDs,
-or private keys.
+Do not invent contract addresses, chain IDs, or private keys. Local
+implementation and Foundry tests can proceed before deploy secrets exist.
 
 If the Policy does not exist yet, run or hand off to `newton-policy` before
 live `setPolicy`. Local client implementation can proceed in parallel once the
@@ -56,12 +61,14 @@ intent shape is agreed.
 - Never source a project-local `.env`, a `.env` beside a user-specified CLI
   binary, another repo checkout, or shell rc files.
 - For live deploy, at the deploy checkpoint ask the user to inject missing
-  `PRIVATE_KEY` and credential-bearing `RPC_URL` into the process environment
-  or `~/.newton/.env`. Verify only whether required variables are set; never
-  print their values.
+  `PRIVATE_KEY` into the process environment or `~/.newton/.env`. On Sepolia,
+  use the public RPC above if `RPC_URL` is unset; on other chains, ask them
+  to inject `RPC_URL` the same way. Verify only whether required variables
+  are set; never print their values.
 - Never perform browser signup, wallet linking, or signing on the user's behalf.
-- Never invent private keys, RPC URLs, contract addresses, chain IDs, or
-  expiration values.
+- Never invent private keys, credential-bearing RPC URLs, contract addresses,
+  chain IDs, or expiration values. Ethereum Sepolia may use
+  `https://ethereum-sepolia-rpc.publicnode.com` when `RPC_URL` is unset.
 
 ## Core sequence
 
@@ -164,7 +171,10 @@ After tests pass, if the user asked to deploy:
 1. Reuse TaskManager / Policy / RPC / signer from user input, process
    environment, or `~/.newton/.env`. Record the `newton-cli login` wallet
    address (from a prior login printout, or ask for the address only).
-2. Stop if `PRIVATE_KEY` or credential-bearing `RPC_URL` is missing.
+2. Stop if `PRIVATE_KEY` is missing. If `RPC_URL` is unset and the chain is
+   Ethereum Sepolia (`11155111`), use
+   `https://ethereum-sepolia-rpc.publicnode.com`. If `RPC_URL` is unset on
+   any other chain, stop.
 3. Summarize chain, constructor args (owner = local key), `setPolicy` /
    register txs, and the later `setPolicyClientOwner` to the login wallet.
 4. Wait for explicit confirmation.

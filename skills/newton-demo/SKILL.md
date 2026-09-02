@@ -30,18 +30,22 @@ Do **not** reimplement Rego, WASM, or Solidity in this skill. Load
 4. **Local-only:** scaffold the UI against placeholders; do not call the
    gateway or send application txs.
 
-If live work is in scope, disclose eventual prerequisites at the start (names
-only, no values yet):
+On the first turn, tell the user they will eventually need (names only, no
+values yet):
 
+- A funded local `PRIVATE_KEY` for Foundry deploy (`newton-policy-client`)
+- A Newton gateway API key from `newton-cli keys` (as `NEWTON_API_KEY` on the
+  **server** Route Handler; not `~/.newton/.env`)
 - Target chain / environment
-- RPC endpoint
-- Funded local `PRIVATE_KEY` for Foundry deploy (`newton-policy-client`)
+- RPC endpoint. On Ethereum Sepolia (`11155111`), this skill uses
+  `https://ethereum-sepolia-rpc.publicnode.com` unless `RPC_URL` /
+  `NEXT_PUBLIC_RPC_URL` is already set. Do not ask the user for a Sepolia URL.
 - Dashboard login wallet (PolicyClient owner after transfer)
-- Gateway API key from `newton-cli keys` (as `NEWTON_API_KEY` on the **server** Route Handler; not `~/.newton/.env`)
 - Whether Policy / PolicyClient are already deployed
 
-Do not ask for secret values in chat. Do not invent chain IDs, token
-addresses, allow/deny rules, or private keys.
+Local scaffold can proceed before those exist. Do not ask for secret values
+in chat. Do not invent chain IDs, token addresses, allow/deny rules, or
+private keys.
 
 ## Credential safety
 
@@ -137,7 +141,9 @@ Tell the user:
 - Policy / PolicyClient / TaskManager addresses when live work ran, without
   exposing secrets
 - How to run the demo (`cd demos/<slug> && npm install && npm run dev`)
-- Env var **names** required (`NEWTON_API_KEY`, optional `NEXT_PUBLIC_RPC_URL`)
+- Env var **names** required (`NEWTON_API_KEY`, `PRIVATE_KEY` for live
+  deploy). RPC: `RPC_URL` / `NEXT_PUBLIC_RPC_URL`, with Sepolia default
+  `https://ethereum-sepolia-rpc.publicnode.com`
 - What was not done (Vercel, other verticals, live txs if not confirmed)
 - Friction or gaps discovered in the skill
 

@@ -14,16 +14,19 @@ specifics.
   the process environment or `~/.newton/.env`)
 - Copy the official frontend guide's browser `apiKey` or
   `SIGNER_PRIVATE_KEY` pattern
-- Invent private keys, RPC URLs, contract addresses, or chain IDs
+- Invent private keys, credential-bearing RPC URLs, contract addresses, or
+  chain IDs. Ethereum Sepolia may use
+  `https://ethereum-sepolia-rpc.publicnode.com` when `RPC_URL` /
+  `NEXT_PUBLIC_RPC_URL` is unset.
 
 ## Where values live
 
 | Secret | Where |
 |---|---|
 | `PRIVATE_KEY` (Foundry deploy) | Process env or `~/.newton/.env` |
-| `RPC_URL` (Foundry / CLI) | Process env or `~/.newton/.env` |
+| `RPC_URL` (Foundry / CLI) | Process env or `~/.newton/.env`. Ethereum Sepolia default: `https://ethereum-sepolia-rpc.publicnode.com` |
 | `NEWTON_API_KEY` (gateway) | From `newton-cli keys` (CLI cache). Copy into `demos/<slug>/.env.local` for Next, or the host's env (Vercel). Not `~/.newton/.env`. |
-| `NEXT_PUBLIC_RPC_URL` | Optional public RPC for wagmi; not a secret if it is a public endpoint |
+| `NEXT_PUBLIC_RPC_URL` | Optional public RPC for wagmi; not a secret if it is a public endpoint. Sepolia default is the same PublicNode URL if unset. |
 | Policy WASM secrets | `newton-cli secrets upload` after owner transfer; never in the demo form |
 
 `.env.local` is allowed **only** for the generated Next.js app because Next

@@ -157,6 +157,10 @@ Common failures:
 
 - Missing files: scaffold/restore the required template files.
 - `jco` missing: run `doctor` and install componentize dependencies.
+- `jco` found by `doctor` but `policy build` cannot run it: the npm-global
+  binary directory is not on `PATH`. Export
+  `PATH="$(npm config get prefix)/bin:$PATH"` in this session (CLI README)
+  and retry. Do not reinstall until `command -v jco` fails.
 - Componentize failure: fix JS/WIT syntax, import version, or disabled WASI
   usage.
 
