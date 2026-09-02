@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "kind": "newton-policy-client-handoff",
+  "chainId": 11155111,
+  "environment": "testnet",
+  "policyHandoff": "policies/my-policy/dist/policy-handoff.json",
+  "policyClient": null,
+  "protectedFunction": "transferWithAttestation(address,uint256,Task,TaskResponse,bytes)",
+  "userArgs": [
+    { "name": "recipient", "type": "address" },
+    { "name": "amount", "type": "uint256" }
+  ],
+  "target": null,
+  "needsTokenApproval": true,
+  "eip712": {
+    "name": "NewtonPolicyClient",
+    "version": "1"
+  },
+  "intent": {
+    "to": "token",
+    "value": "0",
+    "functionSignature": "function transfer(address recipient, uint256 amount)",
+    "dataEncoding": "transfer(address,uint256)"
+  },
+  "policy": null,
+  "policyId": null,
+  "taskManager": null,
+  "owner": null,
+  "ownerIsLoginWallet": false,
+  "registered": false,
+  "policyClientRegistry": null
+}

@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "kind": "newton-demo-config",
+  "chainId": 11155111,
+  "policyClient": null,
+  "target": null,
+  "needsTokenApproval": false,
+  "protectedFunction": {
+    "name": "transferWithAttestation",
+    "userArgs": [
+      { "name": "recipient", "type": "address" },
+      { "name": "amount", "type": "uint256" }
+    ]
+  },
+  "intent": {
+    "value": "0",
+    "functionSignature": "function transfer(address recipient, uint256 amount)",
+    "dataEncoding": "transfer(address,uint256)"
+  },
+  "eip712": {
+    "name": "NewtonPolicyClient",
+    "version": "1"
+  },
+  "wasmArgs": null
+}

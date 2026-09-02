@@ -1,0 +1,6 @@
+newton-contracts/=lib/newton-contracts/
+forge-std/=lib/forge-std/src/
+@openzeppelin/=lib/newton-contracts/lib/eigenlayer-middleware/lib/openzeppelin-contracts/
+@openzeppelin-upgrades/=lib/newton-contracts/lib/eigenlayer-middleware/lib/openzeppelin-contracts-upgradeable/
+@eigenlayer/=lib/newton-contracts/lib/eigenlayer-middleware/lib/eigenlayer-contracts/src/
+@eigenlayer-middleware/=lib/newton-contracts/lib/eigenlayer-middleware/

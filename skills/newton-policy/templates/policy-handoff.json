@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "kind": "newton-policy-handoff",
+  "chainId": 11155111,
+  "environment": "testnet",
+  "policyDir": "policies/my-policy",
+  "policy": null,
+  "policyData": [],
+  "entrypoint": "my_policy.allow",
+  "expireAfterBlocks": null,
+  "params": {
+    "path": "configs/params.json",
+    "schemaPath": "params_schema.json"
+  },
+  "secretsRequired": false,
+  "secretsSchema": null,
+  "intent": {
+    "to": "token",
+    "value": "0",
+    "functionSignature": "function transfer(address recipient, uint256 amount)",
+    "dataEncoding": "transfer(address,uint256)",
+    "intentJsonPath": "configs/intent.json"
+  }
+}

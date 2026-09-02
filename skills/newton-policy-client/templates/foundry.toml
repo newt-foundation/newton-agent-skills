@@ -1,0 +1,28 @@
+# Copy into the application Foundry project root (merge remappings if a
+# foundry.toml already exists). Do not vendor newton-contracts source here.
+# Float newton-contracts main until the repo publishes version tags:
+#   forge install newt-foundation/newton-contracts
+#   git -C lib/newton-contracts submodule update --init --recursive
+
+[profile.default]
+src = "src"
+test = "test"
+script = "script"
+out = "out"
+libs = ["lib"]
+solc = "0.8.27"
+via-ir = true
+optimizer = true
+optimizer_runs = 1
+ffi = false
+verbosity = 2
+lint_on_build = false
+
+remappings = [
+    "newton-contracts/=lib/newton-contracts/",
+    "forge-std/=lib/forge-std/src/",
+    "@openzeppelin/=lib/newton-contracts/lib/eigenlayer-middleware/lib/openzeppelin-contracts/",
+    "@openzeppelin-upgrades/=lib/newton-contracts/lib/eigenlayer-middleware/lib/openzeppelin-contracts-upgradeable/",
+    "@eigenlayer/=lib/newton-contracts/lib/eigenlayer-middleware/lib/eigenlayer-contracts/src/",
+    "@eigenlayer-middleware/=lib/newton-contracts/lib/eigenlayer-middleware/",
+]
