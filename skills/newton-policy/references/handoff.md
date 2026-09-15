@@ -9,11 +9,16 @@ it. Default path: `<policy-dir>/dist/policy-handoff.json`.
 
 ## When to write
 
-- After local simulate passes: write a **partial** file (`policy` / `policyData`
-  null, intent and entrypoint filled).
-- After `policy deploy -p`: fill `chainId`, `policy`, `policyData` (in on-chain
-  order), `entrypoint`, and `expireAfterBlocks` from `configs/deployment.toml`
-  when set.
+- After local simulate passes: write a **partial** file. `policy` stays
+  `null`. Intent and entrypoint are filled.
+  - **Fresh oracle:** leave `policyData` empty (`[]`) until deploy.
+  - **Published packs / composite:** fill `policyData` and `packs` now from
+    `newton-cli policy packs show --format json`. Those PolicyData contracts
+    already exist; do not wait for `policy deploy` and do not copy addresses
+    from chat or GitHub.
+- After `policy deploy -p`: fill `policy`. For a fresh oracle, also fill
+  `policyData` in on-chain order. Copy `expireAfterBlocks` from
+  `configs/deployment.toml` when set.
 
 Never put private keys, RPC URLs, JWTs, or secrets JSON in this file.
 
@@ -27,7 +32,8 @@ Never put private keys, RPC URLs, JWTs, or secrets JSON in this file.
 | `environment` | no | `"testnet"` / `"mainnet"` / user label |
 | `policyDir` | yes | Path the next skill can open |
 | `policy` | after deploy | Policy address, else `null` |
-| `policyData` | after deploy | Array of PolicyData addresses, positional |
+| `policyData` | after lookup or deploy | Array of PolicyData addresses, positional. Same order as `INewtonPolicy.getPolicyData()` and `packs[]` |
+| `packs` | published packs | `[{ "id", "policyData", "wasmCid" }, …]` in that same order. Labels only; `policyData` array is the source of truth for wiring |
 | `entrypoint` | yes | e.g. `stablecoin_transfer.allow` |
 | `expireAfterBlocks` | when known | PolicyData expiration; else `null` |
 | `params.path` | yes | Usually `configs/params.json` |
@@ -43,6 +49,28 @@ Never put private keys, RPC URLs, JWTs, or secrets JSON in this file.
 `functionSignature` must be the named form
 `function transfer(address recipient, uint256 amount)`, not
 `function transfer(address,uint256)`.
+
+Published composite example (`packs` optional; `policyData` required and
+positional):
+
+```json
+{
+  "schemaVersion": 1,
+  "kind": "newton-policy-handoff",
+  "chainId": 84532,
+  "environment": "testnet",
+  "policy": null,
+  "policyData": ["0xVAULTSFYI", "0xCHAINALYSIS"],
+  "packs": [
+    { "id": "vaultsfyi", "policyData": "0xVAULTSFYI", "wasmCid": "bafy..." },
+    { "id": "chainalysis", "policyData": "0xCHAINALYSIS", "wasmCid": "bafy..." }
+  ]
+}
+```
+
+Replace the `0x…` / CID placeholders with values from
+`newton-cli --chain-id 84532 policy packs show --pack <id> --format json`.
+Do not invent them.
 
 ## After writing
 

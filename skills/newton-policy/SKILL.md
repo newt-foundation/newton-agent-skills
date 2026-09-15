@@ -3,8 +3,11 @@ name: newton-policy
 description: >-
   Install newton-cli, authenticate with Newton when required, create gateway
   API keys, and run the generic policy workflow (scaffold, author, build,
-  simulate, iterate, and optionally deploy). Use when setting up Newton,
-  creating a Newton policy, or turning a policy goal into Rego + WASM.
+  simulate, iterate, and optionally deploy). Bind published policy packs
+  (vaultsfyi, webacy, chainalysis, …) and composites via
+  `newton-cli policy packs` instead of deploying a fresh oracle. Use when
+  setting up Newton, creating a Newton policy, composing published packs,
+  or turning a policy goal into Rego + WASM.
 ---
 
 # Newton Policy (CLI)
@@ -37,9 +40,14 @@ not ask for values yet):
 - Target chain/environment
 - RPC endpoint. On Ethereum Sepolia (`11155111`), this skill uses
   `https://ethereum-sepolia-rpc.publicnode.com` unless `RPC_URL` is already
-  set. Do not ask the user for a Sepolia URL.
+  set. Do not ask the user for a Sepolia URL. On other chains (including
+  Base Sepolia `84532`), live deploy needs an injected `RPC_URL` — do not
+  invent a public URL. Pack lookup (`policy packs`) needs no RPC.
 - IPFS upload route: Newton proxy, or direct Pinata using both `PINATA_JWT`
   and `PINATA_GATEWAY`
+
+Published-pack lookup (`newton-cli policy packs`) is config-free: no
+`PRIVATE_KEY`, login, or RPC.
 
 Name the durable injection site: the process environment or
 `~/.newton/.env`. Do not tell the user to populate deploy secrets at
@@ -49,6 +57,22 @@ proceed before those exist.
 Do not request secret values in chat or block local work merely because deploy
 configuration is not ready. Collect/verify missing configuration at the
 deployment checkpoint after local allow/deny simulation passes.
+
+### Published packs vs a fresh oracle
+
+If the brief names a published pack (`vaultsfyi`, `webacy`, `chainalysis`,
+`redstone`, …) or asks to compose more than one, **bind** a new Policy to
+those PolicyData contracts. Do not vendor pack source and do not auto-deploy
+a fresh `NewtonPolicyData` from the scaffolded `policy.js`.
+
+Read [references/published-packs.md](references/published-packs.md). Resolve
+addresses with `newton-cli policy packs show` / `list --format json` — never
+from chat or GitHub. Scaffold a directory for *your* Rego; keep a stub
+`policy.js` that returns namespaced fixture JSON so local simulate can run.
+
+Fresh-oracle (this directory's `policy.js` is the production WASM; omit
+`--policy-data-address` so `policy deploy -p` auto-deploys one PolicyData)
+only when the brief does **not** name a published pack.
 
 ### Local policy workflow (no dashboard login required)
 
@@ -60,7 +84,8 @@ Use for creating or testing policy logic:
    is not enough if `jco` is missing from `PATH`)
 3. Scaffold
 4. Author `policy.js`, `policy.rego`, configs, and schemas; review the
-   scaffolded non-secret `configs/deployment.toml`
+   scaffolded non-secret `configs/deployment.toml`. For a published pack or
+   composite, stub `policy.js` and write Rego against `data.wasm.<pack_id>.*`
 5. Build
 6. Simulate allow + deny cases
 7. Iterate locally
@@ -68,9 +93,11 @@ Use for creating or testing policy logic:
 Read [references/setup-and-auth.md](references/setup-and-auth.md) for install
 and toolchain setup, then
 [references/policy-loop.md](references/policy-loop.md) for the local loop.
-Write a [policy-handoff.json](references/handoff.md) after simulate (partial)
-and after deploy (addresses filled) so `newton-policy-client` and
-`newton-demo` can consume it.
+For named packs, also read
+[references/published-packs.md](references/published-packs.md).
+Write a [policy-handoff.json](references/handoff.md) after simulate
+(`policy` null; published packs already fill `policyData`) and after deploy
+(`policy` filled) so `newton-policy-client` and `newton-demo` can consume it.
 
 ### Authenticated / live workflow
 
@@ -139,12 +166,13 @@ then rerun `newton-cli login`.
 
 ```text
 scaffold
+  → if brief names packs: policy packs show/list --format json
   → author policy.js + policy.rego + configs/schemas
   → policy build
   → policy simulate (allow + deny)
   → iterate
-  → write policy-handoff.json (partial; addresses after deploy)
-  → optional deploy
+  → write policy-handoff.json (policy null; published policyData from lookup)
+  → optional deploy (--policy-data-address per pack, same order)
   → optional newton-policy-client (deploy / setPolicy / setPolicyClientOwner via cast), then secrets / live evaluate
 ```
 
@@ -153,7 +181,10 @@ Rules:
 - Code defines intent; schemas must match fields actually read by `policy.js`
   and Rego.
 - WASM JSON is `data.wasm.*` in Rego (local simulate, gateway simulate, and
-  live operators). Do not use `data.data.*` for oracle output.
+  live operators). Published composites use `data.wasm.<pack_id>.*`. Do not
+  use `data.data.*` for oracle output.
+- Never copy PolicyData addresses from chat or GitHub when
+  `newton-cli policy packs` answered.
 - `policy build` disables WASI `stdio`, `random`, `clocks`, `http`, and
   `fetch-event`. Use Newton WIT imports, not those globals.
 - Stay local until build/simulate behavior matches the user's goal.
@@ -168,6 +199,8 @@ Tell the user:
 - Allow and deny results
 - Path of the written `policy-handoff.json` (see
   [references/handoff.md](references/handoff.md))
+- For published packs: pack ids and positional PolicyData addresses from
+  `policy packs show` (not from chat)
 - Friction or gaps discovered in the skill/CLI
 - For live work: chain/environment and deployed PolicyData, Policy, and
   PolicyClient addresses (without exposing secrets). If deploy secrets were
@@ -186,11 +219,19 @@ Test this draft with:
 3. **Expired/revoked credentials:** authenticated check fails → clean
    reauthentication.
 4. **Local-only policy:** complete scaffold → build → simulate without login.
+5. **Published composite:** `vaultsfyi` + `chainalysis` on Base Sepolia
+   (`84532`) → `policy packs show` for each id → namespaced stub simulate
+   allow+deny → write handoff with `packs` and positional `policyData`. Do
+   not auto-deploy PolicyData.
 
 ## Out of scope
 
 - Building dashboard/explorer UI (a local attested-call demo is `newton-demo`)
 - Assuming use-case-specific product logic not provided by the user
+- Vendoring policy-pack source from `newton-policy-packs` (bind published
+  PolicyData; do not copy pack `policy.js`)
+- Adding `newton-cli vault` / `shield` commands; published oracles are
+  `policy packs` + this skill
 - Implementing a policy-client application contract; hand off to
   `newton-policy-client` for Solidity integration. This skill wires an
   existing `INewtonPolicyClient`

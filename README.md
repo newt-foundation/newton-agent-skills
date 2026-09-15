@@ -12,7 +12,7 @@ produce a wallet UI — using the published `newton-cli` install, not a protocol
 
 | Skill | Use when |
 |---|---|
-| [`newton-policy`](skills/newton-policy/SKILL.md) | Installing the CLI, authoring a generic policy, and running scaffold → build → simulate (optional deploy) |
+| [`newton-policy`](skills/newton-policy/SKILL.md) | Installing the CLI, authoring a generic policy, binding published packs / composites (`policy packs`), and running scaffold → build → simulate (optional deploy) |
 | [`newton-policy-client`](skills/newton-policy-client/SKILL.md) | Integrating Newton into a Solidity contract (`NewtonPolicyClient`, `_validateAttestationDirect`, register/set-policy) |
 | [`newton-demo`](skills/newton-demo/SKILL.md) | Turning a customer brief into policy + PolicyClient + a local Next.js demo (delegates to the two skills above) |
 

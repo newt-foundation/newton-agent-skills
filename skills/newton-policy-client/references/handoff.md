@@ -8,8 +8,14 @@ path: `<policy-dir>/dist/policy-handoff.json`. Schema:
 
 Do **not** reconstruct chain ID, Policy / PolicyData addresses, entrypoint,
 params path, or `functionSignature` from chat when this file exists. If it is
-partial (addresses `null`), implement and test locally; stop before live
-`setPolicy` until `newton-policy` fills them.
+partial (`policy` is `null`), implement and test locally; stop before live
+`setPolicy` until `newton-policy` fills `policy`. Published-pack
+`policyData` may already be present after lookup; that does not mean the
+Policy is deployed.
+
+If `packs` is present, treat it as labels for the same positional
+`policyData` array. Do not reorder either array. `policyData` is the source
+of truth for `setPolicy` / wiring.
 
 Match `intent.functionSignature` byte-for-byte in the client. Named vs unnamed
 parameter lists are different strings.

@@ -93,11 +93,14 @@ Policy and client procedures live in those skills, not here.
 ## Brief → requirements
 
 Follow [references/brief.md](references/brief.md). Capture allow/deny
-conditions, the protected action (target, selector, user args), who
-`msg.sender` / `intent.from` is, chain, and whether a UI is in scope.
+conditions, named published packs (if any), the protected action (target,
+selector, user args), who `msg.sender` / `intent.from` is, chain, and
+whether a UI is in scope.
 
 If a product decision is missing, stop and ask. Do not invent a vertical,
-token address, or policy rule to keep moving.
+token address, pack id, or policy rule to keep moving. If the brief names
+packs, `newton-policy` binds published PolicyData — it does not scaffold a
+fresh oracle.
 
 ## Delegate policy and client
 

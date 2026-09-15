@@ -90,15 +90,18 @@ secrets.
 
 ```text
 build
+  → if published: policy packs show --format json
   → generate CIDs (+ secrets schema when needed)
-  → deploy PolicyData (WASM)
+  → deploy PolicyData (fresh oracle only; skip when --policy-data-address is set)
   → deploy Policy (Rego) bound to PolicyData
   → newton-policy-client: deploy / setPolicy / register / setPolicyClientOwner(login wallet) via cast
-  → upload secrets when used (requires getOwner() == login wallet)
+  → upload secrets when used (requires getOwner() == login wallet; once per PolicyData)
   → optional live evaluate (EIP-712 sign + gateway newt_createTask)
 ```
 
-## Orchestrated single-pack deploy
+## Orchestrated deploy
+
+### Fresh oracle (no published pack)
 
 ```bash
 newton-cli policy deploy -p <policy-dir>
@@ -114,6 +117,28 @@ and automatically reads `<policy-dir>/configs/deployment.toml`. Record:
 - `dist/policy-handoff.json` (fill the
   [handoff manifest](handoff.md); this is the input to `newton-policy-client`)
 
+### Published pack or composite
+
+Resolve addresses with `newton-cli policy packs show --format json` first
+([published-packs.md](published-packs.md)). Never copy them from chat or
+GitHub. Then pass each address; this **skips** auto-deploy of a fresh
+PolicyData from the local stub `policy.js`:
+
+```bash
+newton-cli --chain-id 84532 policy deploy \
+  -p <policy-dir> \
+  --policy-data-address 0xFIRST_PACK_PD \
+  --policy-data-address 0xSECOND_PACK_PD
+```
+
+Repeat `--policy-data-address` once per pack, **same order** as
+`INewtonPolicy.getPolicyData()`, the handoff `policyData` array, and
+`packs[]`. Protocol validation is positional. Do not reorder after deploy.
+
+On chains other than Ethereum Sepolia (`11155111`), `RPC_URL` must already
+be set. Do not invent a public RPC for Base Sepolia (`84532`). Pack lookup
+itself needs no RPC.
+
 If `<policy-dir>/secrets_schema.json` exists (or `dist/secrets_schema.json`),
 orchestrated CID generation includes it. Confirm `dist/policy_cids.json` has a
 non-empty `secretsSchemaCid` after deploy. Pass `--secrets-schema-file <path>`
@@ -124,12 +149,11 @@ schema.
 Useful options:
 
 - `--skip-cids`: reuse existing `dist/policy_cids.json`
-- `--skip-data --policy-data-address 0x…`: reuse PolicyData
+- `--skip-data --policy-data-address 0x…`: reuse PolicyData (same as passing
+  the address without auto-deploy)
 - Repeat `--policy-data-address` for a composite Policy
 - `--secrets-schema-file <path>`: override auto-discovery
 - `--pinata-jwt` / `--pinata-gateway`: direct Pinata instead of Newton proxy
-
-For composites, preserve PolicyData address order; validation is positional.
 
 ## Policy-client integration
 
@@ -231,6 +255,10 @@ The gateway validates decrypted JSON against the on-chain schema before
 storage. Never show secrets file contents, echo the API key, or commit
 either.
 
+A composite that uses `getSecrets()` needs one upload per PolicyData
+address (same `(policy_client, policy_data)` scope). Run the command once
+for each address in the handoff `policyData` array.
+
 ## Optional live evaluate
 
 Only when the user requests a gateway round-trip. Do **not** use
@@ -262,7 +290,8 @@ Do not expose credentials.
 
 Deployment is done when:
 
-- PolicyData and Policy are deployed/bound.
+- Policy is deployed and bound to the intended PolicyData (published
+  addresses from `policy packs`, or freshly deployed for a new oracle).
 - PolicyClient is registered when required, points to the Policy, and
   `getOwner()` is the login wallet.
 - Params are set when Rego uses them (before owner transfer).

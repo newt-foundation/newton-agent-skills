@@ -21,7 +21,7 @@ This repository is the canonical home for Newton Agent Skills.
 
 ## Updating skills
 
-When `newton-cli` flags or the policy loop change, update `newton-policy` in the same change set as the CLI (or immediately after). When `NewtonPolicyClient` / `_validateAttestationDirect` semantics change, update `newton-policy-client`. When the demo app evaluate path or `demo-config.json` shape changes, update `newton-demo`. Do not let the skills drift.
+When `newton-cli` flags or the policy loop change, update `newton-policy` in the same change set as the CLI (or immediately after). Published pack lookup (`newton-cli policy packs`) and composite `--policy-data-address` order belong in `newton-policy`, not a new vault/shield skill. When `NewtonPolicyClient` / `_validateAttestationDirect` semantics change, update `newton-policy-client`. When the demo app evaluate path or `demo-config.json` shape changes, update `newton-demo`. Do not let the skills drift.
 
 `newton-policy-client/templates/` holds copyable Foundry files (contract, tests,
 remappings, deploy/verify scripts). `newton-policy/templates/` holds the policy
