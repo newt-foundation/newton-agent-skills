@@ -1,13 +1,13 @@
 ---
 name: newton-policy-client
 description: >-
-  Integrate Newton policy enforcement into a Solidity contract by inheriting
-  NewtonPolicyClient, binding attested intents, validating with
+  Integrate Newton policy enforcement into a Solidity contract you control
+  by inheriting NewtonPolicyClient, binding attested intents, validating with
   _validateAttestationDirect, wiring setPolicy with cast, and submitting
   evaluations by signing an EIP-712 intent and POSTing newt_createTask to the
-  chain's gateway. Use when adding a PolicyClient, wrapping an existing
-  contract with Newton authorization, or connecting a deployed Policy to an
-  application contract. Do not use newton-cli policy-client or newton-cli task.
+  chain's gateway. Use when adding a PolicyClient to an app contract you can
+  change. Do not inherit this mixin on Morpho, Euler, or Superform (use
+  newton-vault-shield). Do not use newton-cli policy-client or newton-cli task.
 ---
 
 # Newton PolicyClient
@@ -15,10 +15,13 @@ description: >-
 > **Status:** Draft v0 under active dogfood testing. Expect gaps and report
 > friction instead of silently working around it.
 
-Add Newton enforcement to a smart contract. This skill does not author Rego or
-WASM; use `newton-policy` for that. For a one-shot brief or a wallet UI on a
-wired client, use `newton-demo`. Do not assume a vertical (stablecoin,
-vaults, wallets) unless the user specifies one.
+Add Newton enforcement to a smart contract **you control**. This skill
+does not author Rego or WASM; use `newton-policy` for that. To attach a
+Shield clone to Morpho / Euler / Superform / DemoVault (a vault Newton
+does not own), use `newton-vault-shield` — do not inherit
+`NewtonPolicyClient` on those protocols. For a one-shot brief or a wallet
+UI on a wired client, use `newton-demo`. Do not assume a vertical
+(stablecoin, vaults, wallets) unless the user specifies one.
 
 ## Choose the workflow first
 
@@ -294,6 +297,8 @@ Tell the user:
 ## Out of scope
 
 - Authoring or compiling Rego/WASM (use `newton-policy`)
+- Attaching to Morpho / Euler / Superform / DemoVault (use
+  `newton-vault-shield`; those vaults do not inherit this mixin)
 - One-shot product demos from a customer brief, or a wallet UI for a wired
   PolicyClient (use `newton-demo`)
 - Relayed/meta-transaction designs that break `intent.from == msg.sender`

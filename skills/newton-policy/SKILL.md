@@ -17,8 +17,10 @@ description: >-
 
 Build generic Newton policies with `newton-cli`. Do not assume a vertical
 (stablecoin, vaults, etc.) unless the user specifies one. For Solidity
-PolicyClient integration, use `newton-policy-client`. For a one-shot brief
-→ policy → client → local UI, use `newton-demo`.
+PolicyClient integration on a contract you control, use
+`newton-policy-client`. To attach a Shield to Morpho / Euler / Superform /
+DemoVault, use `newton-vault-shield`. For a one-shot brief → policy →
+client → local UI, use `newton-demo`.
 
 ## Choose the workflow first
 
@@ -97,7 +99,8 @@ For named packs, also read
 [references/published-packs.md](references/published-packs.md).
 Write a [policy-handoff.json](references/handoff.md) after simulate
 (`policy` null; published packs already fill `policyData`) and after deploy
-(`policy` filled) so `newton-policy-client` and `newton-demo` can consume it.
+(`policy` filled) so `newton-policy-client`, `newton-vault-shield`, and
+`newton-demo` can consume it.
 
 ### Authenticated / live workflow
 
@@ -173,7 +176,8 @@ scaffold
   → iterate
   → write policy-handoff.json (policy null; published policyData from lookup)
   → optional deploy (--policy-data-address per pack, same order)
-  → optional newton-policy-client (deploy / setPolicy / setPolicyClientOwner via cast), then secrets / live evaluate
+  → optional newton-policy-client (Solidity you control) or newton-vault-shield (Morpho / Euler attach)
+  → optional secrets / live evaluate
 ```
 
 Rules:
@@ -233,6 +237,7 @@ Test this draft with:
 - Adding `newton-cli vault` / `shield` commands; published oracles are
   `policy packs` + this skill
 - Implementing a policy-client application contract; hand off to
-  `newton-policy-client` for Solidity integration. This skill wires an
-  existing `INewtonPolicyClient`
+  `newton-policy-client` for Solidity you control, or `newton-vault-shield`
+  to attach a Shield to a vault Newton does not own. This skill wires an
+  existing `INewtonPolicyClient` only via those skills
 - MCP / ecosystem plugin packaging

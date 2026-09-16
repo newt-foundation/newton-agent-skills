@@ -15,11 +15,18 @@ description: >-
 > friction instead of silently working around it.
 
 Build a generic product demo: policy + PolicyClient + a lite Next.js App
-Router UI. Do not assume a vertical (stablecoin, vaults, wallets) unless the
-user specifies one. An ERC-20 transfer wrapper is only the golden *example*.
+Router UI. Do not assume a vertical (stablecoin, vaults, wallets) unless
+the user specifies one. An ERC-20 transfer wrapper is only the golden
+*example*.
 
 Do **not** reimplement Rego, WASM, or Solidity in this skill. Load
 `newton-policy` and `newton-policy-client` and follow them.
+
+If the brief is **attach a Shield to an existing Morpho / Euler /
+Superform vault**, load `newton-vault-shield` instead of
+`newton-policy-client`. That gold path is typed allow +
+`assertIntentBlocked` deny, not this Next.js app, unless the user also
+asked for a wallet UI.
 
 ## Choose the workflow first
 
@@ -153,6 +160,8 @@ Tell the user:
 ## Out of scope
 
 - Reimplementing Rego, WASM, or Solidity (use the sibling skills)
+- Attaching a Shield to Morpho / Euler / Superform (use
+  `newton-vault-shield`; do not inherit `NewtonPolicyClient` on those vaults)
 - Operator / observability work
 - Relayed / meta-transaction designs that break `intent.from == msg.sender`
 - Putting the gateway API key in the browser

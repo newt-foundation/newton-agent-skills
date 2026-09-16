@@ -21,12 +21,13 @@ This repository is the canonical home for Newton Agent Skills.
 
 ## Updating skills
 
-When `newton-cli` flags or the policy loop change, update `newton-policy` in the same change set as the CLI (or immediately after). Published pack lookup (`newton-cli policy packs`) and composite `--policy-data-address` order belong in `newton-policy`, not a new vault/shield skill. When `NewtonPolicyClient` / `_validateAttestationDirect` semantics change, update `newton-policy-client`. When the demo app evaluate path or `demo-config.json` shape changes, update `newton-demo`. Do not let the skills drift.
+When `newton-cli` flags or the policy loop change, update `newton-policy` in the same change set as the CLI (or immediately after). Published pack lookup (`newton-cli policy packs`) and composite `--policy-data-address` order belong in `newton-policy`, not `newton-vault-shield`. When `NewtonPolicyClient` / `_validateAttestationDirect` semantics change, update `newton-policy-client`. When VaultKit `createShield` / vendor overlays / `assertIntentBlocked` change, update `newton-vault-shield`. When the demo app evaluate path or `demo-config.json` shape changes, update `newton-demo`. Do not let the skills drift.
 
 `newton-policy-client/templates/` holds copyable Foundry files (contract, tests,
 remappings, deploy/verify scripts). `newton-policy/templates/` holds the policy
-handoff JSON. `newton-demo/templates/` holds a lite Next.js app and
-`demo-config.json`. Do not vendor `newton-contracts` contract source here.
+handoff JSON. `newton-vault-shield/templates/` holds VaultKit attach scripts and
+`shield-handoff.json`. `newton-demo/templates/` holds a lite Next.js app and
+`demo-config.json`. Do not vendor `newton-contracts` or VaultKit source here.
 
 ## Credential safety
 

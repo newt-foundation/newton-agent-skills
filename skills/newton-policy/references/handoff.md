@@ -1,8 +1,8 @@
 # Policy handoff manifest
 
-Write a machine-readable JSON file so `newton-policy-client` and
-`newton-demo` can consume deploy + intent facts without reconstructing them
-from chat.
+Write a machine-readable JSON file so `newton-policy-client`,
+`newton-vault-shield`, and `newton-demo` can consume deploy + intent facts
+without reconstructing them from chat.
 
 Copy [templates/policy-handoff.json](../templates/policy-handoff.json) and fill
 it. Default path: `<policy-dir>/dist/policy-handoff.json`.
@@ -75,5 +75,7 @@ Do not invent them.
 ## After writing
 
 Report the file path in the completion report. Hand off to
-`newton-policy-client` (and `newton-demo` when a UI is in scope) with that
-path; do not re-list the same facts as the source of truth.
+`newton-policy-client` (Solidity you control), `newton-vault-shield`
+(Morpho / Euler / Superform attach), and `newton-demo` when a UI is in
+scope, with that path; do not re-list the same facts as the source of
+truth.

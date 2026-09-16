@@ -1,7 +1,7 @@
 # Orchestrate policy + client + demo
 
-This skill is a conductor. It does not replace `newton-policy` or
-`newton-policy-client`.
+This skill is a conductor. It does not replace `newton-policy`,
+`newton-policy-client`, or `newton-vault-shield`.
 
 ## Resume first
 
@@ -26,6 +26,11 @@ PolicyClient address from chat when a handoff file exists.
 If the brief names published packs, load `newton-policy` and follow
 [published-packs.md](../../newton-policy/references/published-packs.md).
 Do not start a fresh-oracle scaffold.
+
+If the brief attaches to an existing Morpho / Euler / Superform /
+DemoVault, load `newton-vault-shield` after the policy handoff instead of
+`newton-policy-client`. Consume `shield-handoff.json`. Do not inherit
+`NewtonPolicyClient` on those vaults.
 
 ## Full path
 

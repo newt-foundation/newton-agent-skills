@@ -50,6 +50,10 @@ Never put private keys, RPC URLs, JWTs, or secrets JSON in this file.
 policy handoff, and `ownerIsLoginWallet: true`. If owner is still the local
 key, do not hand off to secrets upload.
 
+Vault attach (`newton-vault-shield`) does not consume this file; it
+consumes the policy handoff and writes `shield-handoff.json`. Do not write
+a fake client-handoff to satisfy a Morpho brief.
+
 `newton-demo` copies `chainId`, `policyClient`, `userArgs`, `target`,
 `needsTokenApproval`, `eip712`, and `intent` into `demo-config.json`. Keep
 `functionSignature` in the named UTF-8 form. Never put keys or RPC URLs in

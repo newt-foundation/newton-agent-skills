@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "kind": "newton-vault-shield-handoff",
+  "chainId": 84532,
+  "environment": "testnet",
+  "policyHandoff": "policies/my-policy/dist/policy-handoff.json",
+  "vendor": "morpho",
+  "vault": null,
+  "shield": null,
+  "policy": null,
+  "policyData": [],
+  "packs": [],
+  "role": {
+    "name": "allocator",
+    "granted": false,
+    "grantTx": null
+  },
+  "paramsSet": false,
+  "secretsUploaded": false,
+  "allow": {
+    "action": "reallocate",
+    "transactionHash": null,
+    "taskId": null
+  },
+  "deny": {
+    "action": "reallocate",
+    "blocked": false,
+    "taskId": null,
+    "reason": null
+  }
+}

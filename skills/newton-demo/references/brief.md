@@ -14,6 +14,7 @@ Otherwise derive the protected action from the brief.
 | Allow / deny conditions | Becomes `policy.rego` + params in `newton-policy` |
 | External data the oracle needs | Becomes `policy.js`, `wasm_args`, optional `getSecrets()` |
 | Published packs | If the brief names `vaultsfyi`, `webacy`, `chainalysis`, `redstone`, … bind those PolicyData. Do **not** scaffold a fresh oracle. `newton-policy` uses `policy packs show` |
+| Existing vault attach | If the brief gates Morpho / Euler / Superform / DemoVault manager actions on a vault Newton does not own, the client is a Shield (`newton-vault-shield`), not a Foundry `NewtonPolicyClient` |
 | Protected action | Function the PolicyClient exposes after `_validateAttestationDirect` |
 | Downstream intent | Six-field `NewtonMessage.Intent` (`to`, `value`, named `functionSignature`, `data`) |
 | User args | Form fields and the prefix of the protected function before `Task` |
@@ -66,6 +67,6 @@ A short requirements block (in chat is fine) plus, when work proceeds:
 - Enough for `newton-policy` to choose published-pack bind vs a fresh oracle
 - Enough for `newton-policy` to scaffold and author
 - Enough for `newton-policy-client` to choose a pattern and name
-  `userArgs`
+  `userArgs`, **or** for `newton-vault-shield` when the brief is vault attach
 - `needsTokenApproval: true` only when the client uses `transferFrom` (or
   similar) and the connected wallet must `approve` the PolicyClient
