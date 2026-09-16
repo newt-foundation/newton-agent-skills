@@ -19,8 +19,10 @@ Build generic Newton policies with `newton-cli`. Do not assume a vertical
 (stablecoin, vaults, etc.) unless the user specifies one. For Solidity
 PolicyClient integration on a contract you control, use
 `newton-policy-client`. To attach a Shield to Morpho / Euler / Superform /
-DemoVault, use `newton-vault-shield`. For a one-shot brief → policy →
-client → local UI, use `newton-demo`.
+DemoVault, use `newton-vault-shield`. For a one-shot PolicyClient UI, use
+`newton-demo`. For a Morpho / vaultsfyi / Shield brief (including
+[`newton-morpho-shield-brief.txt`](../../newton-morpho-shield-brief.txt)),
+use `newton-vault-demo`.
 
 ## Choose the workflow first
 

@@ -20,9 +20,9 @@ This skill does not author Rego or WASM; use `newton-policy` for that.
 Do not inherit `NewtonPolicyClient` on Morpho / Euler / Superform — those
 protocols will not take that mixin. The Shield *is* the PolicyClient.
 
-A one-shot wallet UI is `newton-demo` only when the user asked for a
-frontend. The gold path here is typed allow + `assertIntentBlocked` deny,
-not a Next app. Headless wizard / Veda factory work is out of scope
+A one-shot wallet UI for Shield is `newton-vault-demo`, not `newton-demo`.
+The gold path here is typed allow + `assertIntentBlocked` deny, not a
+Next app. Headless wizard / Veda factory work is out of scope
 (`newton-vault-wizard`, not this skill).
 
 ## Choose the workflow first
@@ -44,9 +44,12 @@ not ask for values yet):
   on Sepolia / Base Sepolia)
 - RPC endpoint. On Ethereum Sepolia (`11155111`), this skill uses
   `https://ethereum-sepolia-rpc.publicnode.com` unless `RPC_URL` is already
-  set. Do not ask the user for a Sepolia URL. On other chains (including
-  Base Sepolia `84532`), live attach needs an injected `RPC_URL` — do not
-  invent a public URL
+  set. On Base Sepolia (`84532`), use
+  `https://base-sepolia-rpc.publicnode.com` unless `RPC_URL` is already a
+  Base Sepolia URL. If `RPC_URL` is Ethereum Sepolia while the brief is
+  `84532`, do not send txs there. Always pass `allowNewVersion: true` on
+  `createShield` (public RPCs cap `eth_getLogs`). Other chains still need
+  an injected `RPC_URL` — do not invent a URL
 - The existing **vault address** (Morpho MetaMorpho, Euler Earn, Superform,
   or DemoVault). Do not invent it
 - A deployed `NewtonPolicy` in `policy-handoff.json` (`policy` filled). If
@@ -149,8 +152,9 @@ After the script typechecks, if the user asked to attach on-chain:
    environment, or `~/.newton/.env`
 2. Stop if `policy` in the handoff is `null`
 3. Stop if `PRIVATE_KEY` or `NEWTON_API_KEY` is missing. If `RPC_URL` is
-   unset and the chain is Ethereum Sepolia (`11155111`), use the public
-   RPC above. If `RPC_URL` is unset on any other chain, stop
+   unset, Ethereum Sepolia may use the PublicNode URL above and Base
+   Sepolia may use `https://base-sepolia-rpc.publicnode.com`. If `RPC_URL`
+   is unset on any other chain, stop
 4. Stop if the vault address is unknown
 5. Summarize chain, vault, policy, `definePolicy` modules, clone deploy vs
    attach, `setParams`, secrets **names** (not values), and the role grant
@@ -165,9 +169,13 @@ Do **not** use `newton-cli policy-client`, `newton-cli task`, or a
 `newton-cli secrets upload` for this path; VaultKit
 `shield.uploadSecrets` encrypts and uploads with `NEWTON_API_KEY`.
 
-Do **not** transfer Shield ownership to the dashboard login wallet unless
-the user explicitly asked. The curator `PRIVATE_KEY` is the VaultKit
-signer and the initial approved delegate.
+Gateway `uploadSecrets` still matches the API-key dashboard identity to
+Shield `getOwner()`. If they differ, follow
+[`newton-vault-demo` secrets-and-owner.md](../newton-vault-demo/references/secrets-and-owner.md):
+`setParams` and `setApprovedDelegate` while the curator still owns the
+clone, then `setPolicyClientOwner(dashboardWallet)` (or use a
+curator-owned API key). After that transfer the curator cannot
+`setParams` on that version.
 
 ## Completion report
 
@@ -189,7 +197,7 @@ Tell the user:
 1. **Morpho attach:** “gate this MetaMorpho `reallocate` with vaultsfyi;
    show allow vs deny” on Base Sepolia (`84532`) after `newton-policy`
    deployed the Policy. Clone + role + mined allow + blocked deny +
-   handoff.
+   handoff. Wallet UI for that brief is `newton-vault-demo`.
 2. **Composite:** same vault with `vaultsfyi` + `chainalysis` modules
    matching the policy handoff `packs[]` order on-chain.
 3. **Generic `sendCall`:** toy DemoVault or a vendor overlay this skill
@@ -204,4 +212,5 @@ Tell the user:
 - Adding `newton-cli vault` or `newton-cli shield`
 - Vendoring VaultKit, policy-pack, or vendor SDK source into this repo
 - Agent-as-curator / production allocator bots
+- Two-view Next.js shareholder/curator UI (`newton-vault-demo`)
 - Dashboard / explorer UI, MCP packaging

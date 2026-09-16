@@ -96,11 +96,13 @@ cannot prove a mined Morpho allow without that grant.
 Vaults.fyi indexes production networks, not testnets. A Vaults.fyi policy
 on Base Sepolia can fail closed because there is no testnet vault data.
 
-For demos, the pack's published types document **data-source override**
-fields so the oracle can look up a real mainnet vault while the Shield
-still executes on Base Sepolia. Read those field names from the pack
-package; do not invent them. In production, remove the override so the
-policy describes the same vault the Shield gates.
+For demos, override `prepareQueryOptions.vaultsfyi.{network,vaultAddress}`
+to a Vaults.fyi-listed production vault (network slug `mainnet`, not
+`ethereum`). The Shield still executes on the testnet dummy. Pack wasm_args
+use `lastKnownAllocationHash` for the same allocation-hash gate VaultKit
+calls `previousAllocationHash`. Do not invent the listed address; pick it
+at run time. In production, remove the override so the policy describes
+the same vault the Shield gates.
 
 ## Completion checks
 

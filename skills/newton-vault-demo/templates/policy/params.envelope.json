@@ -1,0 +1,13 @@
+{
+  "params": {
+    "vaultsfyi": {
+      "apy_z_max": 1000000,
+      "tvl_drawdown_24h_max_pct": 100,
+      "tvl_drawdown_7d_max_pct": 100,
+      "risk_score_floor": 0,
+      "deny_on_allocation_change": true,
+      "deny_on_critical_flag": false,
+      "deny_on_corrupted": false
+    }
+  }
+}

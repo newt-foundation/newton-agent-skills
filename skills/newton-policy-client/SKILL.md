@@ -20,7 +20,8 @@ does not author Rego or WASM; use `newton-policy` for that. To attach a
 Shield clone to Morpho / Euler / Superform / DemoVault (a vault Newton
 does not own), use `newton-vault-shield` — do not inherit
 `NewtonPolicyClient` on those protocols. For a one-shot brief or a wallet
-UI on a wired client, use `newton-demo`. Do not assume a vertical
+UI on a wired PolicyClient, use `newton-demo`. For a Shield / Morpho vault
+UI, use `newton-vault-demo`. Do not assume a vertical
 (stablecoin, vaults, wallets) unless the user specifies one.
 
 ## Choose the workflow first

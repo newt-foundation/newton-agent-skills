@@ -68,6 +68,13 @@ data.wasm.chainalysis.sanctioned
 data.params.vaultsfyi.risk_score_floor
 ```
 
+When the Policy is consumed by VaultKit `setParams`, live params are an
+NPM1 envelope (`params.params.vaultsfyi`, plus `_manifest` / `modules`).
+Author `params_schema.json` and Rego for that envelope. Copy
+[`newton-vault-demo` templates/policy/](../../newton-vault-demo/templates/policy/)
+and see [params-envelope.md](../../newton-vault-demo/references/params-envelope.md).
+CLI-only policies without VaultKit may still use `data.params.vaultsfyi`.
+
 Copy the *shape* of deny rules from the pack's published docs / npm types,
 not the pack's `policy.js` into this repo. Full convention:
 [`composite-policies.md`](https://github.com/newt-foundation/newton-policy-packs/blob/main/docs/composite-policies.md).

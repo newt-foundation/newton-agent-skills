@@ -5,6 +5,10 @@
  * Fill from policy-handoff.json and env. Do not invent vault, policy, or
  * marketParams addresses. Confirm before live txs.
  *
+ * For the Morpho + vaultsfyi gold path, copy
+ * `newton-vault-demo/templates/run-morpho-e2e.ts` instead of filling this
+ * skeleton.
+ *
  * Extra packs: pnpm add @newton-xyz/policy-pack-<id> and .with(thatModule)
  * in the same order as handoff.packs[]. Morpho peers:
  *   pnpm add @morpho-org/blue-sdk @morpho-org/blue-sdk-viem @morpho-org/morpho-ts

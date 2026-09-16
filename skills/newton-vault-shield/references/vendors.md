@@ -35,9 +35,12 @@ Positional `(vault, allocations, options?)`. Each allocation is Morpho
 the user, the vault's current allocation, or a named fixture they pointed
 at.
 
-Per-call policy inputs go in `prepareQueryOptions.<pack_id>`. Example
-Vaults.fyi field: `previousAllocationHash`. Add `chainalysis` (or other)
-slices only when that pack is on the handoff.
+Per-call policy inputs go in `prepareQueryOptions.<pack_id>`. Vaults.fyi
+uses `previousAllocationHash`, `network`, and `vaultAddress`. Pack wasm_args
+for the same idea use `lastKnownAllocationHash`. On testnets override
+`network` + `vaultAddress` to a Vaults.fyi-listed production vault; do not
+query the dummy. Add `chainalysis` (or other) slices only when that pack
+is on the handoff.
 
 ### Euler Earn `reallocate`
 

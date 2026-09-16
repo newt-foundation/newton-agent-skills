@@ -15,14 +15,15 @@ key and RPC).
   credential-bearing RPC URLs
 - Invent private keys, vault addresses, Policy addresses, chain IDs, or
   market params. Ethereum Sepolia may use
-  `https://ethereum-sepolia-rpc.publicnode.com` when `RPC_URL` is unset
+  `https://ethereum-sepolia-rpc.publicnode.com` when `RPC_URL` is unset.
+  Base Sepolia may use `https://base-sepolia-rpc.publicnode.com`
 
 ## Where values live
 
 | Secret | Where |
 |---|---|
 | `PRIVATE_KEY` (curator / VaultKit `walletClient`) | Process env or `~/.newton/.env`. VaultKit docs sometimes call this `CURATOR_PRIVATE_KEY`; use `PRIVATE_KEY` |
-| `RPC_URL` | Process env or `~/.newton/.env`. Ethereum Sepolia default: `https://ethereum-sepolia-rpc.publicnode.com`. Base Sepolia (`84532`) has no default; stop if unset |
+| `RPC_URL` | Process env or `~/.newton/.env`. Ethereum Sepolia default: `https://ethereum-sepolia-rpc.publicnode.com`. Base Sepolia default: `https://base-sepolia-rpc.publicnode.com`. If `RPC_URL` is Ethereum Sepolia while `chainId` is `84532`, use the Base Sepolia default instead |
 | `NEWTON_API_KEY` | From `newton-cli keys`. Process env for the attach script. Same key authenticates evaluate **and** `uploadSecrets` |
 | Pack oracle secrets (`VAULTSFYI_API_KEY`, …) | Process env. Pass into `shield.uploadSecrets({ <pack_id>: { ... } })`. Never chat, never handoff JSON |
 
@@ -34,16 +35,22 @@ only. Do not populate it and do not commit filled values.
 | Role | Who | What it signs |
 |---|---|---|
 | Curator key | `PRIVATE_KEY` | `createShield`, `setParams`, typed actions, `setApprovedDelegate` |
-| Dashboard login wallet | Address printed by `newton-cli login` | Not required for this VaultKit path |
+| Dashboard login wallet | Address printed by `newton-cli login` | Identity behind `NEWTON_API_KEY` for gateway `uploadSecrets` |
 
-Do **not** copy `newton-policy-client`'s `setPolicyClientOwner(loginWallet)`
-flow unless the user explicitly wants the dashboard wallet to own the
-Shield. `shield.uploadSecrets` uses `NEWTON_API_KEY`, not
-`newton-cli secrets upload`.
+`shield.uploadSecrets` uses `NEWTON_API_KEY`, not `newton-cli secrets upload`.
+The gateway still checks that identity against Shield `getOwner()`. If
+the curator owns the clone and the API key belongs to the login wallet,
+upload returns `AuthorizationFailed`. Do **not** skip that check.
+
+Order: `setParams` and `setApprovedDelegate(curator)` **before**
+`setPolicyClientOwner(dashboardWallet)`, then `uploadSecrets`. After the
+transfer the curator cannot `setParams` / `setPolicy` on that clone.
+Alternative: an API key whose dashboard identity is the curator address.
+Details: [`newton-vault-demo` secrets-and-owner.md](../../newton-vault-demo/references/secrets-and-owner.md).
 
 The initial Shield owner is an approved delegate at clone init. After an
-ownership handoff, call `setApprovedDelegate(executor, true)` before
-`sendCall` / typed actions.
+ownership handoff, confirm `isApprovedDelegate(curator)` before typed
+actions.
 
 ## Newton `env` vs chain
 

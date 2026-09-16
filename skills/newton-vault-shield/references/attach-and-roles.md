@@ -64,16 +64,19 @@ const policy = policyFromAddress({
 ```typescript
 import { createShield } from '@newton-xyz/vaultkit'
 import { morphoActions } from '@newton-xyz/vaultkit/vendors/morpho'
+import { getAddress } from 'viem'
 
-const shield = (await createShield({
-  apiKey: process.env.NEWTON_API_KEY!,
-  walletClient,
-  publicClient,
-  rpc: process.env.RPC_URL!,
-  vault: handoffVault,
-  policy,
-  policyAddress: handoff.policy,
-})).extend(morphoActions)
+const shield = (
+  await createShield({
+    apiKey: process.env.NEWTON_API_KEY!,
+    walletClient,
+    rpc: process.env.RPC_URL!,
+    vault: getAddress(handoffVault),
+    policy,
+    policyAddress: getAddress(handoff.policy),
+    allowNewVersion: true,
+  })
+).extend(morphoActions)
 ```
 
 Supported chain ids: `1`, `8453`, `11155111`, `84532`. Wallet client chain
@@ -87,6 +90,7 @@ or deploys a new one through `ShieldFactory`. Record
 |---|---|
 | `mustDeploy: true` | Fail instead of attaching to an existing clone |
 | `version` | Fresh clone after a botched first bind (default `0n`) |
+| `allowNewVersion: true` | Skip factory `eth_getLogs` from deploy block to latest. Required on public Base Sepolia RPCs (10k–50k log caps). Also required when bumping `version` |
 | `attachWithoutVerify: true` | Recovery only; immediately `setParams`, then remove the flag and `reverify()` |
 | `expectedParams` | Require canonical byte equality of stored params at attach |
 | `bypassDelaySeconds` | Clone config; default seven days, minimum one day |

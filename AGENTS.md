@@ -21,12 +21,14 @@ This repository is the canonical home for Newton Agent Skills.
 
 ## Updating skills
 
-When `newton-cli` flags or the policy loop change, update `newton-policy` in the same change set as the CLI (or immediately after). Published pack lookup (`newton-cli policy packs`) and composite `--policy-data-address` order belong in `newton-policy`, not `newton-vault-shield`. When `NewtonPolicyClient` / `_validateAttestationDirect` semantics change, update `newton-policy-client`. When VaultKit `createShield` / vendor overlays / `assertIntentBlocked` change, update `newton-vault-shield`. When the demo app evaluate path or `demo-config.json` shape changes, update `newton-demo`. Do not let the skills drift.
+When `newton-cli` flags or the policy loop change, update `newton-policy` in the same change set as the CLI (or immediately after). Published pack lookup (`newton-cli policy packs`) and composite `--policy-data-address` order belong in `newton-policy`, not `newton-vault-shield`. When `NewtonPolicyClient` / `_validateAttestationDirect` semantics change, update `newton-policy-client`. When VaultKit `createShield` / vendor overlays / `assertIntentBlocked` change, update `newton-vault-shield`. When a vault brief, Shield UI, or VaultKit params envelope / secrets-owner path changes, update `newton-vault-demo`. When the PolicyClient demo app evaluate path or `demo-config.json` shape changes, update `newton-demo`. Do not let the skills drift.
 
 `newton-policy-client/templates/` holds copyable Foundry files (contract, tests,
 remappings, deploy/verify scripts). `newton-policy/templates/` holds the policy
 handoff JSON. `newton-vault-shield/templates/` holds VaultKit attach scripts and
-`shield-handoff.json`. `newton-demo/templates/` holds a lite Next.js app and
+`shield-handoff.json`. `newton-vault-demo/templates/` holds envelope policy
+files, a filled Morpho e2e script, and a two-view Next.js app.
+`newton-demo/templates/` holds a lite Next.js app and
 `demo-config.json`. Do not vendor `newton-contracts` or VaultKit source here.
 
 ## Credential safety
@@ -36,6 +38,9 @@ handoff JSON. `newton-vault-shield/templates/` holds VaultKit attach scripts and
 - Do not invent private keys, credential-bearing RPC URLs, contract addresses, chain IDs, or expiration values.
 - Ethereum Sepolia (`11155111`) may use the documented public RPC
   `https://ethereum-sepolia-rpc.publicnode.com` when `RPC_URL` is unset.
+- Base Sepolia (`84532`) may use `https://base-sepolia-rpc.publicnode.com`
+  (or `https://sepolia.base.org`) when `RPC_URL` is unset. If `RPC_URL` is
+  Ethereum Sepolia while the brief is Base Sepolia, do not send txs there.
 
 ## What not to put here
 

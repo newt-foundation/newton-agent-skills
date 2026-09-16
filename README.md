@@ -17,12 +17,16 @@ not a protocol source checkout.
 | [`newton-policy`](skills/newton-policy/SKILL.md) | Installing the CLI, authoring a generic policy, binding published packs / composites (`policy packs`), and running scaffold → build → simulate (optional deploy) |
 | [`newton-policy-client`](skills/newton-policy-client/SKILL.md) | Integrating Newton into a Solidity contract you control (`NewtonPolicyClient`, `_validateAttestationDirect`, register/set-policy) |
 | [`newton-vault-shield`](skills/newton-vault-shield/SKILL.md) | Attaching a VaultKit Shield to a vault Newton does not own (Morpho / Euler / Superform / DemoVault): `createShield` → role grant → allow + deny |
-| [`newton-demo`](skills/newton-demo/SKILL.md) | Turning a customer brief into policy + PolicyClient + a local Next.js demo (delegates to `newton-policy` and `newton-policy-client`; vault attach is `newton-vault-shield`) |
+| [`newton-vault-demo`](skills/newton-vault-demo/SKILL.md) | Orchestrating a vault brief: published packs → Shield attach → typed allow/deny → optional two-view Next.js UI (shareholder deposit vs curator reallocate). Use for [`newton-morpho-shield-brief.txt`](newton-morpho-shield-brief.txt) |
+| [`newton-demo`](skills/newton-demo/SKILL.md) | Turning a customer brief into policy + PolicyClient + a local Next.js demo (delegates to `newton-policy` and `newton-policy-client`; vault/Shield UI is `newton-vault-demo`) |
 
 All listed skills are draft v0 and under dogfood testing. Expect gaps; report friction instead of silently working around it.
 
-The product brief for the Newton-protected Safe passkey attack demo is
-[`newton-safe-demo-brief.txt`](newton-safe-demo-brief.txt).
+Product briefs:
+
+- ERC-20 transfer demo: [`sample-brief.txt`](sample-brief.txt)
+- Newton-protected Safe passkey attack demo: [`newton-safe-demo-brief.txt`](newton-safe-demo-brief.txt)
+- Morpho vault Shield + Vaults.fyi (shareholder deposit / curator reallocate): [`newton-morpho-shield-brief.txt`](newton-morpho-shield-brief.txt)
 
 ## Layout
 
@@ -40,6 +44,10 @@ skills/
     SKILL.md
     references/
     templates/          # VaultKit attach scripts, shield-handoff.json
+  newton-vault-demo/
+    SKILL.md
+    references/
+    templates/          # envelope policy files, filled Morpho e2e, two-view Next app
   newton-demo/
     SKILL.md
     references/
@@ -72,7 +80,7 @@ repository root, and loads personal skills from `$HOME/.agents/skills`.
 **This repository as the workspace.** Create the `.agents/skills` symlink
 above, then open the repo in Codex CLI or the IDE extension. List skills with
 `/skills`. Invoke with `$newton-policy`, `$newton-policy-client`,
-`$newton-vault-shield`, or `$newton-demo`. Restart Codex if a newly linked
+`$newton-vault-shield`, `$newton-vault-demo`, or `$newton-demo`. Restart Codex if a newly linked
 skill does not appear.
 
 **Another project.** Copy or symlink each skill into that project's
@@ -86,6 +94,8 @@ ln -sfn /path/to/newton-agent-skills/skills/newton-policy-client \
   /path/to/app/.agents/skills/newton-policy-client
 ln -sfn /path/to/newton-agent-skills/skills/newton-vault-shield \
   /path/to/app/.agents/skills/newton-vault-shield
+ln -sfn /path/to/newton-agent-skills/skills/newton-vault-demo \
+  /path/to/app/.agents/skills/newton-vault-demo
 ln -sfn /path/to/newton-agent-skills/skills/newton-demo \
   /path/to/app/.agents/skills/newton-demo
 ```

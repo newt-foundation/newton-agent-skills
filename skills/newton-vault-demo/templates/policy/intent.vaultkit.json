@@ -1,0 +1,8 @@
+{
+  "from": null,
+  "to": null,
+  "value": "0",
+  "chainId": "84532",
+  "functionSignature": "reallocate(((address,address,address,address,uint256),uint256)[])",
+  "data": "0x"
+}

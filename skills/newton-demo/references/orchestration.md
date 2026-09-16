@@ -28,9 +28,10 @@ If the brief names published packs, load `newton-policy` and follow
 Do not start a fresh-oracle scaffold.
 
 If the brief attaches to an existing Morpho / Euler / Superform /
-DemoVault, load `newton-vault-shield` after the policy handoff instead of
+DemoVault, load `newton-vault-demo` (and `newton-vault-shield`) instead of
 `newton-policy-client`. Consume `shield-handoff.json`. Do not inherit
-`NewtonPolicyClient` on those vaults.
+`NewtonPolicyClient` on those vaults. Do not copy this skill's evaluate
+page onto a Shield demo.
 
 ## Full path
 

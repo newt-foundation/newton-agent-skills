@@ -1,0 +1,36 @@
+{
+  "type": "object",
+  "description": "VaultKit composite envelope written by shield.setParams (NPM1 manifest + params.vaultsfyi).",
+  "properties": {
+    "_manifest": { "type": "object" },
+    "modules": { "type": "array" },
+    "params": {
+      "type": "object",
+      "properties": {
+        "vaultsfyi": {
+          "type": "object",
+          "properties": {
+            "apy_z_max": { "type": "number" },
+            "tvl_drawdown_24h_max_pct": { "type": "number" },
+            "tvl_drawdown_7d_max_pct": { "type": "number" },
+            "risk_score_floor": { "type": "number" },
+            "deny_on_allocation_change": { "type": "boolean" },
+            "deny_on_critical_flag": { "type": "boolean" },
+            "deny_on_corrupted": { "type": "boolean" }
+          },
+          "required": [
+            "apy_z_max",
+            "tvl_drawdown_24h_max_pct",
+            "tvl_drawdown_7d_max_pct",
+            "risk_score_floor",
+            "deny_on_allocation_change",
+            "deny_on_critical_flag",
+            "deny_on_corrupted"
+          ]
+        }
+      },
+      "required": ["vaultsfyi"]
+    }
+  },
+  "required": ["params"]
+}
