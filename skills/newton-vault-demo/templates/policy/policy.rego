@@ -33,4 +33,12 @@ deny contains "vault_corrupted" if {
     t.deny_on_corrupted
 }
 
+ca_t := object.get(object.get(data.params, "params", {}), "chainalysis", object.get(data.params, "chainalysis", {}))
+ca_v := object.get(data.wasm, "chainalysis", {})
+
+deny contains "chainalysis_sanctioned" if {
+    object.get(ca_t, "deny_on_sanctioned", false)
+    object.get(ca_v, "sanctioned", false)
+}
+
 allow if count(deny) == 0

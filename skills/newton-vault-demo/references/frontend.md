@@ -1,8 +1,13 @@
 # Two-view Next.js app
 
-Copy [templates/app/](../templates/app/) to `demos/<slug>/` (gitignored
-in this skills repo). Fill `demo-config.json` from the policy and shield
-handoffs ([handoff.md](handoff.md)).
+The filled dummy Morpho ndUSDC app is
+[`dummy-morpho-vault-demo`](https://github.com/newt-foundation/dummy-morpho-vault-demo).
+Clone that repo for the Base Sepolia two-allocator beat. Do not copy it
+back into this skills repo.
+
+For a **new** customer vault, copy [templates/app/](../templates/app/) to
+`demos/<slug>/` (gitignored in this skills repo). Fill `demo-config.json`
+from the policy and shield handoffs ([handoff.md](handoff.md)).
 
 Do not copy `newton-demo/templates/app`. That UI signs an EIP-712 intent
 and calls `evaluateIntentDirect` on a `NewtonPolicyClient`.
@@ -15,7 +20,8 @@ and calls `evaluateIntentDirect` on a `NewtonPolicyClient`.
 | `/curator` | Allocator | Yes. POST `/api/reallocate` runs VaultKit on the server |
 
 `/` is a short index that links both. Headline: depositors are
-shareholders; the curator cannot reallocate without Newton.
+shareholders; reallocations go through Newton. When the brief is
+two-allocator, add that the allocator identity is screened.
 
 The curator Route Handler uses `NEWTON_API_KEY` and the curator
 `PRIVATE_KEY` (approved delegate after owner transfer). Keep both off
@@ -23,13 +29,31 @@ The curator Route Handler uses `NEWTON_API_KEY` and the curator
 unless you later wire `executeDirect` from the wallet; dogfood may use
 one key for both views.
 
-**Evaluate allow** mines a `reallocate`. Confirm before the click.
-**Evaluate deny** is `assertIntentBlocked` (no deny tx). Pass the same
-`shieldVersion` as the typed attach. If `createShield` returns a different
-clone than `demo-config.json` `shield`, stop — do not bump version from
-the UI.
+On a two-allocator brief the curator view is an allocator **dropdown**
+plus two destination CTAs: **Move funds to dummy market** and **Move
+funds back to idle**. Show idle vs dummy supplied balances from Morpho
+Blue `position` (vault as supplier). Clean allocator mines a
+`reallocate` to that destination. Sanctioned allocator is
+`assertIntentBlocked` (no deny tx); show that JSON in red. Link each
+`taskId` (allow and deny) to
+`https://explorer.newton.xyz/testnet/task/<taskId>` (mainnet explorer
+when `chainId` is `1` or `8453`). Confirm before a clean click. Pass
+the same `shieldVersion` as the typed attach. If `createShield` returns
+a different clone than `demo-config.json` `shield`, stop — do not bump
+version from the UI.
 
 ## Run
+
+Filled dummy Morpho vault:
+
+```bash
+git clone https://github.com/newt-foundation/dummy-morpho-vault-demo.git
+cd dummy-morpho-vault-demo
+pnpm install
+pnpm dev
+```
+
+New customer slug:
 
 ```bash
 cd demos/<slug>

@@ -1,0 +1,9 @@
+{
+  "network": "mainnet",
+  "vaultAddress": null,
+  "lastKnownAllocationHash": null,
+  "chainalysis": {
+    "address": "0x0000000000000000000000000000000000000001",
+    "sanctioned": false
+  }
+}

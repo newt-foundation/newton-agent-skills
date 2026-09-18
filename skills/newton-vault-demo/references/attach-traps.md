@@ -42,9 +42,11 @@ read allocations from chain; do not invent `marketParams`. If markets are
 missing, stop and confirm before `createMarket` / `setSupplyQueue` /
 enable.
 
-A typical allow allocation for this demo: `1e6` (1 USDC, 6 decimals) to
-idle and `maxUint256` to the dummy market (or the reverse). Confirm
-amounts with the user. Do not drain more than the brief asked.
+A typical allow allocation for this demo: withdraw from the funded dummy
+market first (`dummyAssets` 0 or a lower target), then `maxUint256` to
+idle. Morpho processes reallocations in order; supplying idle before
+withdrawing dummy reverts `transferFrom` because the vault has no liquid
+USDC. Confirm amounts with the user. Do not drain more than the brief asked.
 
 `MARKETS_PATH` JSON for `run-morpho-e2e.ts`:
 
@@ -52,7 +54,8 @@ amounts with the user. Do not drain more than the brief asked.
 {
   "idle": { "loanToken": "0x…", "collateralToken": "0x…", "oracle": "0x…", "irm": "0x…", "lltv": "0" },
   "dummy": { "loanToken": "0x…", "collateralToken": "0x…", "oracle": "0x…", "irm": "0x…", "lltv": "0" },
-  "idleAssets": "1000000"
+  "idleAssets": "1000000",
+  "dummyAssets": "0"
 }
 ```
 

@@ -7,6 +7,7 @@
   "assetSymbol": "USDC",
   "assetDecimals": 6,
   "shareSymbol": "ndUSDC",
+  "morphoBlue": null,
   "shield": null,
   "policy": null,
   "shieldVersion": 0,

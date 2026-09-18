@@ -38,6 +38,30 @@ Allocation-hash gate:
 Keep other Vaults.fyi thresholds generous unless the brief tightens them
 so they do not steal the demo.
 
+## Two allocators
+
+If the brief asks for two allocators (one passes, one fails), that is
+**Chainalysis on identity**, not two Morpho Blue markets. Markets are
+destinations. The Morpho vault still has **one** on-chain allocator: the
+Shield clone. Humans are Shield delegates.
+
+- Bind published `vaultsfyi` + `chainalysis`. Do not grant a second
+  Morpho allocator EOA that reallocates around Newton.
+- Screen `prepareQueryOptions.chainalysis.address`. The published pack
+  does not bind this to `msg.sender`.
+- Allow: screened address is the clean curator.
+- Deny: screened address is a documented OFAC / Chainalysis sanctioned
+  Ethereum address. Pick it at run time; do not invent one. Deny reason
+  `chainalysis_sanctioned`.
+- Dogfood may sign both attempts with the funded curator key.
+- Turn Vaults.fyi's `deny_on_allocation_change` **off** so the hash
+  fixture does not steal the story. Keep other Vaults.fyi thresholds
+  generous. Still override `prepareQueryOptions.vaultsfyi` to a listed
+  mainnet vault.
+- Curator UI: allocator **dropdown** (clean vs sanctioned), then two
+  destination CTAs (**Move funds to dummy market** / **Move funds back
+  to idle**). Not Evaluate allow / Evaluate deny.
+
 ## App
 
 VaultKit `createShield`. Intent `to` is the MetaMorpho vault. Intent
@@ -50,7 +74,9 @@ Two views, one vault:
 
 1. **Shareholder** — connect, approve asset, `deposit`, show shares. No
    evaluate / attestation.
-2. **Curator** — reallocate through the Shield. Show allow vs deny
+2. **Curator** — reallocate through the Shield. If the brief is
+   two-allocator, a dropdown picks the allocator and the CTAs are
+   destination moves (dummy vs idle). Otherwise show allow vs deny
    (task, blocked reason). API key stays on the server.
 
 Dogfood may use one wallet for both views if that key is already owner /

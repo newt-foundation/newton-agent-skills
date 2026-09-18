@@ -11,6 +11,7 @@
     "@morpho-org/blue-sdk-viem": "*",
     "@morpho-org/morpho-ts": "*",
     "@newton-xyz/policy-core": "*",
+    "@newton-xyz/policy-pack-chainalysis": "*",
     "@newton-xyz/policy-pack-vaultsfyi": "*",
     "@newton-xyz/vaultkit": "^2.1.0",
     "viem": "^2.35.1",

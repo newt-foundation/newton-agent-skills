@@ -13,6 +13,12 @@ export function run(wasm_args) {
     parsed.lastKnownAllocationHash ?? parsed.previousAllocationHash ?? null;
   const allocationHash = "cafef00d";
   const changed = Boolean(last) && last !== allocationHash;
+  const chainalysisArgs =
+    parsed.chainalysis && typeof parsed.chainalysis === "object"
+      ? parsed.chainalysis
+      : parsed;
+  const sanctioned =
+    chainalysisArgs.sanctioned === true || parsed.fixture === "sanctioned";
 
   return JSON.stringify({
     vaultsfyi: {
@@ -24,6 +30,11 @@ export function run(wasm_args) {
       is_corrupted: false,
       allocation_hash: allocationHash,
       allocation_changed_since_last: changed,
+    },
+    chainalysis: {
+      sanctioned,
+      is_high_risk: false,
+      risk_categories: [],
     },
   });
 }

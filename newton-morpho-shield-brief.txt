@@ -1,33 +1,41 @@
-Build a Base Sepolia demo: a shareholder deposits test USDC into a dummy Morpho vault; a curator reallocates those funds only through a Newton Shield gated by Vaults.fyi.
+Build a Base Sepolia demo: a shareholder deposits test USDC into a dummy Morpho vault; two allocators try to reallocate those funds through a Newton Shield. The clean allocator passes. The sanctioned allocator is blocked.
 
 Product
-Two local views, one vault. Headline: depositors are shareholders; the curator cannot reallocate without Newton.
+Two local views, one vault. Headline: depositors are shareholders; reallocations go through Newton; the allocator identity is screened.
 
 Shareholder view: connect a wallet, approve Base Sepolia USDC, deposit into the vault, receive vault shares (ndUSDC). Deposit and withdraw are ordinary ERC-4626 calls. They are not Newton-gated. Do not show evaluate / attestation on this view.
 
-Curator view: the same vault's allocator path. Reallocate between two dummy Morpho Blue USDC markets through a Newton Shield clone. This is the only Newton-gated action. Show allow vs deny (attestation, task, blocked reason). Do not inherit NewtonPolicyClient on Morpho.
+Curator view: a dropdown selects which allocator identity to screen, then two CTAs move funds (dummy market vs back to idle). Not "evaluate allow" / "evaluate deny" and not "Clean allocator" / "Sanctioned allocator" as the buttons.
+- Allocator dropdown: Clean allocator or Sanctioned allocator.
+- Move funds to dummy market / Move funds back to idle: same Shield-gated Morpho reallocate; destination is the CTA.
+- Clean allocator: Newton allows. The Morpho reallocate mines.
+- Sanctioned allocator: Newton denies (reason: chainalysis_sanctioned). No mined deny tx.
+
+The Morpho vault still has one on-chain allocator: the Shield clone. Humans are Shield delegates. Do not grant a second Morpho allocator EOA that can reallocate around Newton. Do not inherit NewtonPolicyClient on Morpho.
 
 Circle USDC on Base Sepolia: 0x036CbD53842c5426634e7929541eC2318f3dCF7e (6 decimals). If a dummy MetaMorpho vault, idle USDC market, and second dummy USDC market already exist from earlier dogfood, reuse them instead of deploying another set. Otherwise create a tiny vault, enable an idle market so deposits can land, and enable a second dummy USDC market so reallocate has somewhere to go.
 
 Policy
-Use the published vaultsfyi pack only (newton-cli policy packs). Do not scaffold a fresh HTTP oracle. Do not add chainalysis, webacy, or any other pack.
+Use the published vaultsfyi + chainalysis packs (newton-cli policy packs). Do not scaffold a fresh HTTP oracle. Do not add webacy or any other pack.
 
-Allow a Morpho reallocate when Vaults.fyi reports the looked-up vault's allocation is unchanged (no previousAllocationHash, or it matches).
-Deny the same reallocate when previousAllocationHash is wrong (deny reason: allocation_changed).
-Other Vaults.fyi checks must not steal the demo: generous APY/TVL ceilings, risk_score_floor 0, deny_on_critical_flag false, deny_on_corrupted false. deny_on_allocation_change is the only real gate and is a policy parameter I can change later.
+Chainalysis is the story's gate. Screen prepareQueryOptions.chainalysis.address (the published pack does not bind this to msg.sender).
+- Allow when the screened address is the clean curator (not sanctioned).
+- Deny when the screened address is a documented OFAC / Chainalysis sanctioned Ethereum address (deny reason: chainalysis_sanctioned). Pick that address at run time; do not invent one.
+- deny_on_sanctioned is true. deny_on_high_risk_category is false and risk_categories_blocklist is empty so paid screening does not steal the demo.
+- Dogfood may sign both attempts with the funded curator key and pass the screened address in query options. Do not require a dirty signing key unless one is already on this machine.
 
-Vaults.fyi indexes production networks, not Base Sepolia. For this demo, prepareQueryOptions.vaultsfyi must point at a Vaults.fyi-listed Ethereum mainnet vault (network + vaultAddress). The Shield still reallocates the Base Sepolia dummy vault. Do not query the dummy vault address. Pick a listed mainnet vault at run time; do not invent one.
+Vaults.fyi stays on the composite so the listed-vault override is still required, but it must not steal the demo: generous APY/TVL ceilings, risk_score_floor 0, deny_on_allocation_change false, deny_on_critical_flag false, deny_on_corrupted false. prepareQueryOptions.vaultsfyi must point at a Vaults.fyi-listed Ethereum mainnet vault (network + vaultAddress). The Shield still reallocates the Base Sepolia dummy vault. Do not query the dummy vault address. Pick a listed mainnet vault at run time; do not invent one.
 
 Chain: Base Sepolia (84532). Newton gateway env is prod. Intent value is 0. The intent target is the MetaMorpho vault. functionSignature is Morpho reallocate. intent.from is the curator wallet and must equal msg.sender. No relayer.
 
 App
-Attach a VaultKit Shield (createShield), setParams / uploadSecrets for vaultsfyi, and grant the Shield clone the Morpho allocator role (setIsAllocator). Typed overlay: shield.morpho.reallocate. Prove one mined allow and one deny via assertIntentBlocked (no mined deny tx). Shareholder deposits call the vault directly.
+Attach a VaultKit Shield (createShield) bound to the composite Policy, setParams / uploadSecrets for both vaultsfyi and chainalysis, and grant the Shield clone the Morpho allocator role (setIsAllocator). Typed overlay: shield.morpho.reallocate. Prove one mined allow (clean allocator) and one deny via assertIntentBlocked (sanctioned allocator). Shareholder deposits call the vault directly.
 
 Frontend
-A local Next.js app is enough: shareholder screen (connect, approve USDC, deposit, show shares) and curator screen (reallocate through the Shield, allow vs deny). Keep the Newton API key off the browser. Do not deploy to Vercel. Dogfood may use one wallet for both views if that key is already owner / curator / allocator and a depositor.
+A local Next.js app is enough: shareholder screen (connect, approve USDC, deposit, show shares) and curator screen with two allocator actions (Clean allocator / Sanctioned allocator). Keep the Newton API key off the browser. Do not deploy to Vercel. Dogfood may use one wallet for both views if that key is already owner / curator / allocator and a depositor.
 
 Scope
-Author and locally simulate allow (matching / omitted allocation hash) and deny (wrong previousAllocationHash) against a stub vaultsfyi WASM.
-Deploy Policy (bound to the published vaultsfyi PolicyData), createShield, role grant, setParams, uploadSecrets, and live allow/deny only after I confirm each live step.
+Author and locally simulate allow (clean / not sanctioned) and deny (sanctioned) against a stub vaultsfyi + chainalysis WASM.
+Deploy Policy (bound to the published vaultsfyi and chainalysis PolicyData), createShield, role grant, setParams, uploadSecrets, and live allow/deny only after I confirm each live step.
 Run the UI with next dev. Live deposit and the first attested reallocate also need my confirmation.
-Do not invent extra rules, a second pack, a different chain, deposit gating, or newton-cli vault/shield commands. Use credentials already on this machine; never ask me to paste keys into chat.
+Do not invent extra rules, a third pack, a different chain, deposit gating, or newton-cli vault/shield commands. Use credentials already on this machine (VAULTS_FYI_API_KEY, CHAINALYSIS_SANCTIONS_KEY); never ask me to paste keys into chat.

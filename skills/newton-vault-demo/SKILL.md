@@ -36,7 +36,10 @@ Resume existing `policy-handoff.json`, `shield-handoff.json`, and
 `demos/<slug>/demo-config.json` before scaffolding. Do not invent vault,
 policy, market, or listed Vaults.fyi addresses. Reuse a dummy vault the
 brief names; leftovers from this repo's dogfood are in
-[fixtures.md](references/fixtures.md) and are reuse-only.
+[fixtures.md](references/fixtures.md) and are reuse-only. The filled
+dummy Morpho ndUSDC Next app lives in
+[`dummy-morpho-vault-demo`](https://github.com/newt-foundation/dummy-morpho-vault-demo),
+not under `demos/` here.
 
 ## Credentials (first turn)
 
@@ -46,7 +49,8 @@ Names only. Never ask for values, never print them.
 - Gateway key from `newton-cli keys`, injected as **both** `API_KEY` and
   `NEWTON_API_KEY` ([credentials.md](references/credentials.md))
 - Pack secret **names** the policy requires (`VAULTS_FYI_API_KEY`; accept
-  local alias `VAULTSFYI_API_KEY`)
+  local alias `VAULTSFYI_API_KEY`. If the brief names `chainalysis`, also
+  `CHAINALYSIS_SANCTIONS_KEY`)
 - Chain. Newton gateway `env` is always `prod`
 - RPC. Ethereum Sepolia and Base Sepolia have documented public defaults
   ([credentials.md](references/credentials.md)). If `RPC_URL` is Ethereum
@@ -73,9 +77,10 @@ workaround.
    `params_schema.json` accepts the VaultKit NPM1 envelope, Rego reads
    `data.params.params.vaultsfyi`, and intent uses the VaultKit
    `functionSignature` ([params-envelope.md](references/params-envelope.md)).
-   Local simulate allow (omit / matching allocation hash) and deny
-   (`deadbeef` → `allocation_changed`) against the stub `policy.js` before
-   any deploy.
+   Local simulate allow vs deny against the stub `policy.js` before any
+   deploy. Vaults.fyi-only: omit / matching allocation hash vs
+   `deadbeef` → `allocation_changed`. Two-allocator / chainalysis: clean
+   address vs sanctioned address → `chainalysis_sanctioned`.
 3. Load `newton-vault-shield`. Copy
    [templates/run-morpho-e2e.ts](templates/run-morpho-e2e.ts) over the
    Morpho skeleton. Follow [attach-traps.md](references/attach-traps.md)
@@ -86,7 +91,10 @@ workaround.
    `reallocate` allow, one `assertIntentBlocked` deny (no mined deny tx).
    Shareholder deposits are ordinary ERC-4626 and are not Newton-gated.
 5. Optional UI: copy [templates/app/](templates/app/) to `demos/<slug>/`
-   ([frontend.md](references/frontend.md)). `next dev` only. No Vercel
+   ([frontend.md](references/frontend.md)). For the filled dummy Morpho
+   vault, clone
+   [`dummy-morpho-vault-demo`](https://github.com/newt-foundation/dummy-morpho-vault-demo)
+   instead of scaffolding a second copy. `next dev` only. No Vercel
    unless the user asked.
 
 ## Sibling overrides (do not "fix" by ignoring)
@@ -123,7 +131,7 @@ Stop and get confirmation before:
 
 - `newton-cli vault` / `newton-cli shield`
 - Inheriting `NewtonPolicyClient` on Morpho / Euler / Superform
-- Chainalysis / webacy unless the brief names them
+- webacy unless the brief names it (chainalysis is in when the brief names two allocators / `chainalysis`)
 - Wizard / Veda / BoringVault (`newton-vault-wizard`)
 - Putting `NEWTON_API_KEY` in the browser or `NEXT_PUBLIC_*`
 - Committing `policies/`, `shields/`, or `demos/` in this skills repo

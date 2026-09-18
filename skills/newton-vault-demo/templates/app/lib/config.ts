@@ -18,6 +18,7 @@ export type VaultDemoConfig = {
   assetSymbol: string;
   assetDecimals: number;
   shareSymbol: string;
+  morphoBlue?: Address | null;
   shield: Address | null;
   policy: Address | null;
   shieldVersion: number;
@@ -26,6 +27,10 @@ export type VaultDemoConfig = {
   listedVaultsfyi: {
     network: string;
     vaultAddress: Address | null;
+  };
+  allocators?: {
+    clean: Address | null;
+    sanctioned: Address | null;
   };
   intent: {
     value: string;

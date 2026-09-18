@@ -10,6 +10,7 @@
 import { readFileSync, writeFileSync } from 'node:fs'
 import { definePolicy, createShield } from '@newton-xyz/vaultkit'
 import { morphoActions } from '@newton-xyz/vaultkit/vendors/morpho'
+import { chainalysis } from '@newton-xyz/policy-pack-chainalysis'
 import { vaultsfyi } from '@newton-xyz/policy-pack-vaultsfyi'
 import { MetaMorphoAction } from '@morpho-org/blue-sdk-viem'
 import {
@@ -101,17 +102,19 @@ function packSecret(): string {
   return value
 }
 
-function innerVaultsfyiParams(paramsPath: string | undefined): Record<string, unknown> {
+function innerPackParams(
+  paramsPath: string | undefined,
+  packId: 'vaultsfyi' | 'chainalysis',
+): Record<string, unknown> {
   if (!paramsPath) {
     throw new Error('Set PARAMS_PATH or policy-handoff params.path to the envelope JSON')
   }
   const raw = JSON.parse(readFileSync(paramsPath, 'utf8')) as {
-    params?: { vaultsfyi?: Record<string, unknown> }
-    vaultsfyi?: Record<string, unknown>
-  }
-  const inner = raw.params?.vaultsfyi ?? raw.vaultsfyi
+    params?: Record<string, Record<string, unknown> | undefined>
+  } & Record<string, Record<string, unknown> | undefined>
+  const inner = raw.params?.[packId] ?? raw[packId]
   if (!inner) {
-    throw new Error(`${paramsPath} has no params.vaultsfyi (VaultKit envelope)`)
+    throw new Error(`${paramsPath} has no params.${packId} (VaultKit envelope)`)
   }
   return inner
 }
@@ -153,6 +156,7 @@ const packIds = (handoff.packs ?? []).map((p) => p.id)
 if (packIds.length && !packIds.includes('vaultsfyi')) {
   throw new Error(`This script imports vaultsfyi; handoff packs are ${packIds.join(', ')}`)
 }
+const twoAllocators = packIds.includes('chainalysis')
 
 const account = privateKeyToAccount(requiredEnv('PRIVATE_KEY') as `0x${string}`)
 const publicClient = createPublicClient({ chain, transport: http(rpc) })
@@ -163,10 +167,13 @@ const walletClient = createWalletClient({
 })
 
 const version = BigInt(process.env.SHIELD_VERSION ?? '0')
-const policy = definePolicy({
+let policyDef = definePolicy({
   chainId: String(handoff.chainId),
   env: 'prod',
 }).with(vaultsfyi)
+if (twoAllocators) {
+  policyDef = policyDef.with(chainalysis)
+}
 
 const shield = (
   await createShield({
@@ -174,7 +181,7 @@ const shield = (
     walletClient,
     rpc,
     vault,
-    policy,
+    policy: policyDef,
     policyAddress: getAddress(handoff.policy),
     version,
     allowNewVersion: true,
@@ -227,7 +234,13 @@ if (want('allocator')) {
 
 if (want('params')) {
   const paramsPath = process.env.PARAMS_PATH ?? handoff.params?.path
-  await shield.setParams({ vaultsfyi: innerVaultsfyiParams(paramsPath) })
+  const params: Record<string, Record<string, unknown>> = {
+    vaultsfyi: innerPackParams(paramsPath, 'vaultsfyi'),
+  }
+  if (twoAllocators) {
+    params.chainalysis = innerPackParams(paramsPath, 'chainalysis')
+  }
+  await shield.setParams(params)
   paramsSet = true
   console.log('setParams ok')
 }
@@ -275,9 +288,15 @@ if (want('owner')) {
 }
 
 if (want('secrets')) {
-  await shield.uploadSecrets({
+  const secrets: Record<string, Record<string, string>> = {
     vaultsfyi: { VAULTS_FYI_API_KEY: packSecret() },
-  })
+  }
+  if (twoAllocators) {
+    secrets.chainalysis = {
+      CHAINALYSIS_SANCTIONS_KEY: requiredEnv('CHAINALYSIS_SANCTIONS_KEY'),
+    }
+  }
+  await shield.uploadSecrets(secrets)
   secretsUploaded = true
   console.log('uploadSecrets ok')
 }
@@ -290,8 +309,8 @@ function loadAllocations(): { marketParams: MarketParams; assets: bigint }[] {
     idleAssets?: string
   }
   return [
-    { marketParams: parseMarket(raw.idle), assets: BigInt(raw.idleAssets ?? '1000000') },
-    { marketParams: parseMarket(raw.dummy), assets: maxUint256 },
+    { marketParams: parseMarket(raw.dummy), assets: BigInt(raw.dummyAssets ?? '0') },
+    { marketParams: parseMarket(raw.idle), assets: maxUint256 },
   ]
 }
 
@@ -300,10 +319,28 @@ const listedQuery = {
   vaultAddress: listedVault,
 }
 
+function allocatorQuery(kind: 'clean' | 'sanctioned'): Record<string, unknown> {
+  const vaultsfyiQuery =
+    kind === 'sanctioned' && !twoAllocators
+      ? { ...listedQuery, previousAllocationHash: 'deadbeef' }
+      : listedQuery
+  if (!twoAllocators) {
+    return { vaultsfyi: vaultsfyiQuery }
+  }
+  const screened =
+    kind === 'clean'
+      ? getAddress(process.env.CLEAN_ALLOCATOR ?? account.address)
+      : getAddress(requiredEnv('SANCTIONED_ALLOCATOR'))
+  return {
+    vaultsfyi: vaultsfyiQuery,
+    chainalysis: { address: screened },
+  }
+}
+
 if (want('allow')) {
   const allocations = loadAllocations()
   const allow = await shield.morpho.reallocate(vault, allocations, {
-    prepareQueryOptions: { vaultsfyi: listedQuery },
+    prepareQueryOptions: allocatorQuery('clean'),
   })
   await publicClient.waitForTransactionReceipt({ hash: allow.transactionHash })
   allowHash = allow.transactionHash
@@ -318,9 +355,7 @@ if (want('deny')) {
     to: vault,
     data: denyCalldata,
     functionSignature: handoff.intent?.functionSignature ?? VAULTKIT_REALLOCATE,
-    prepareQueryOptions: {
-      vaultsfyi: { ...listedQuery, previousAllocationHash: 'deadbeef' },
-    },
+    prepareQueryOptions: allocatorQuery('sanctioned'),
   })
   denyBlocked = Boolean(deny.blocked)
   denyTask = deny.taskId != null ? String(deny.taskId) : null
@@ -341,6 +376,14 @@ const out = {
   policyData: handoff.policyData ?? [],
   packs: handoff.packs ?? [],
   listedVaultsfyi: listedQuery,
+  allocators: twoAllocators
+    ? {
+        clean: getAddress(process.env.CLEAN_ALLOCATOR ?? account.address),
+        sanctioned: process.env.SANCTIONED_ALLOCATOR
+          ? getAddress(process.env.SANCTIONED_ALLOCATOR)
+          : null,
+      }
+    : undefined,
   role: { name: 'allocator', granted: Boolean(grantTx) || want('allocator'), grantTx },
   paramsSet: paramsSet || want('params'),
   secretsUploaded: secretsUploaded || want('secrets'),

@@ -1,9 +1,28 @@
 {
   "type": "object",
-  "description": "VaultKit composite envelope written by shield.setParams (NPM1 manifest + params.vaultsfyi).",
+  "description": "VaultKit NPM1 composite envelope (modules are objects with id, policyDataAddress, wasmCid).",
+  "additionalProperties": true,
+  "required": ["params"],
   "properties": {
-    "_manifest": { "type": "object" },
-    "modules": { "type": "array" },
+    "_manifest": {
+      "type": "object",
+      "properties": {
+        "magic": { "type": "string" },
+        "version": { "type": "integer" }
+      }
+    },
+    "modules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "policyDataAddress", "wasmCid"],
+        "properties": {
+          "id": { "type": "string" },
+          "policyDataAddress": { "type": "string" },
+          "wasmCid": { "type": "string" }
+        }
+      }
+    },
     "params": {
       "type": "object",
       "properties": {
@@ -27,10 +46,25 @@
             "deny_on_critical_flag",
             "deny_on_corrupted"
           ]
+        },
+        "chainalysis": {
+          "type": "object",
+          "properties": {
+            "deny_on_sanctioned": { "type": "boolean" },
+            "deny_on_high_risk_category": { "type": "boolean" },
+            "risk_categories_blocklist": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          },
+          "required": [
+            "deny_on_sanctioned",
+            "deny_on_high_risk_category",
+            "risk_categories_blocklist"
+          ]
         }
       },
       "required": ["vaultsfyi"]
     }
-  },
-  "required": ["params"]
+  }
 }

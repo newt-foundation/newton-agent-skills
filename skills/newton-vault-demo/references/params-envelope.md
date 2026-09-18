@@ -6,7 +6,9 @@ inner object as Policy params. It writes an NPM1 composite envelope:
 ```json
 {
   "_manifest": { "magic": "NPM1", "version": 1 },
-  "modules": ["…published wasm cid…"],
+  "modules": [
+    { "id": "vaultsfyi", "policyDataAddress": "0x…", "wasmCid": "bafy…" }
+  ],
   "params": {
     "vaultsfyi": {
       "apy_z_max": 1000000,
@@ -24,7 +26,9 @@ inner object as Policy params. It writes an NPM1 composite envelope:
 The AVS validates live params against the **custom Policy**
 `params_schema.json`. A schema that only allows `{ "vaultsfyi": {…} }`
 or the pack's flat fields fails evaluate with missing property
-`vaultsfyi` or `apy_z_max`.
+`vaultsfyi` or `apy_z_max`. `modules` items are objects
+(`id`, `policyDataAddress`, `wasmCid`), not CID strings. Arrays must
+include `items` (AVS parse error otherwise: `missing field items`).
 
 ## What to copy
 
@@ -40,7 +44,11 @@ From [templates/policy/](../templates/policy/):
 | `intent.vaultkit.json` | `configs/intent.json` |
 
 Tighten inner thresholds only when the brief says so. Generous APY/TVL
-ceilings keep `deny_on_allocation_change` as the demo gate.
+ceilings keep `deny_on_allocation_change` as the vaultsfyi-only demo
+gate. When the brief is two-allocator, add a `chainalysis` slice
+(`deny_on_sanctioned: true`, `deny_on_high_risk_category: false`,
+`risk_categories_blocklist: []`) and set `deny_on_allocation_change` to
+`false` so identity is the gate.
 
 ## Rego
 
@@ -63,8 +71,11 @@ must use the envelope.
 `policy simulate -p` runs the stub `policy.js`, not the published pack
 WASM. Drive allow vs deny with wasm_args:
 
-- allow: omit `lastKnownAllocationHash` or match the stub hash
-- deny: `"deadbeef"` → `allocation_changed`
+- vaultsfyi-only allow: omit `lastKnownAllocationHash` or match the stub hash
+- vaultsfyi-only deny: `"deadbeef"` → `allocation_changed`
+- two-allocator allow: stub `chainalysis.sanctioned = false`
+- two-allocator deny: stub `chainalysis.sanctioned = true` →
+  `chainalysis_sanctioned`
 
 After envelope schema + params, simulate again before the live Policy
 deploy. A Policy already deployed with a wrong schema cannot be patched

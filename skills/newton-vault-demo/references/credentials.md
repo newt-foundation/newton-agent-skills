@@ -60,8 +60,10 @@ Upload uses the pack's expected name `VAULTS_FYI_API_KEY`. If the machine
 only has `VAULTSFYI_API_KEY`, map the alias at `uploadSecrets` time.
 Never rename live dashboard secrets in chat.
 
-Chainalysis is out of this skill's Morpho gold path unless the brief
-names it.
+If the brief names `chainalysis` / two allocators, also require
+`CHAINALYSIS_SANCTIONS_KEY` at `uploadSecrets`. Do not print it.
+`CHAINALYSIS_SCREENING_KEY` is only needed when `deny_on_high_risk_category`
+is true.
 
 ## Next.js
 

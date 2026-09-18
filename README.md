@@ -26,7 +26,7 @@ Product briefs:
 
 - ERC-20 transfer demo: [`sample-brief.txt`](sample-brief.txt)
 - Newton-protected Safe passkey attack demo: [`newton-safe-demo-brief.txt`](newton-safe-demo-brief.txt)
-- Morpho vault Shield + Vaults.fyi (shareholder deposit / curator reallocate): [`newton-morpho-shield-brief.txt`](newton-morpho-shield-brief.txt)
+- Morpho vault Shield + two allocators (Vaults.fyi + Chainalysis; clean passes, sanctioned is blocked): [`newton-morpho-shield-brief.txt`](newton-morpho-shield-brief.txt). Filled dummy-vault UI: [`dummy-morpho-vault-demo`](https://github.com/newt-foundation/dummy-morpho-vault-demo)
 
 ## Layout
 

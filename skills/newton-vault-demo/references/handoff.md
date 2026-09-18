@@ -13,6 +13,7 @@ addresses. `null` means not deployed yet.
   "assetSymbol": "USDC",
   "assetDecimals": 6,
   "shareSymbol": "ndUSDC",
+  "morphoBlue": null,
   "shield": null,
   "policy": null,
   "shieldVersion": 0,
@@ -21,6 +22,10 @@ addresses. `null` means not deployed yet.
   "listedVaultsfyi": {
     "network": "mainnet",
     "vaultAddress": null
+  },
+  "allocators": {
+    "clean": null,
+    "sanctioned": null
   },
   "intent": {
     "value": "0",

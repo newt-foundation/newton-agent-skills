@@ -5,8 +5,8 @@ export default function Page() {
     <>
       <h1>Newton-gated Morpho vault</h1>
       <p>
-        Depositors are shareholders. The curator cannot reallocate without a Newton
-        Shield attestation.
+        Depositors are shareholders. Reallocations go through a Newton Shield.
+        The allocator identity is screened: one allocator passes, one is blocked.
       </p>
       <section>
         <p className="muted">
@@ -17,7 +17,7 @@ export default function Page() {
           <a href="/shareholder">Shareholder: deposit {demoConfig.assetSymbol}</a>
         </p>
         <p>
-          <a href="/curator">Curator: Shield-gated reallocate</a>
+          <a href="/curator">Curator: two allocators</a>
         </p>
       </section>
     </>
