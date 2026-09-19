@@ -1,7 +1,7 @@
 # Orchestrate policy + client + demo
 
-This skill is a conductor. It does not replace `newton-policy` or
-`newton-policy-client`.
+This skill is a conductor. It does not replace `newton-policy`,
+`newton-policy-client`, or `newton-vault-shield`.
 
 ## Resume first
 
@@ -14,12 +14,24 @@ Before scaffolding anything, look for existing files:
 | Demo config | `demos/<slug>/demo-config.json` |
 
 If both handoffs exist with addresses filled, skip to
-[frontend.md](frontend.md). If the policy handoff is partial (`policy` /
-`policyData` still `null`), you may still copy the Next.js template and fill
-placeholders, but do not call `/api/evaluate` or send application txs.
+[frontend.md](frontend.md). If the policy handoff is partial (`policy` still
+`null`), you may still copy the Next.js template and fill placeholders, but
+do not call `/api/evaluate` or send application txs. Published-pack
+`policyData` may already be filled from `policy packs show`; that is not a
+complete deploy.
 
 Do not reconstruct chain ID, Policy / PolicyData, `functionSignature`, or
 PolicyClient address from chat when a handoff file exists.
+
+If the brief names published packs, load `newton-policy` and follow
+[published-packs.md](../../newton-policy/references/published-packs.md).
+Do not start a fresh-oracle scaffold.
+
+If the brief attaches to an existing Morpho / Euler / Superform /
+DemoVault, load `newton-vault-demo` (and `newton-vault-shield`) instead of
+`newton-policy-client`. Consume `shield-handoff.json`. Do not inherit
+`NewtonPolicyClient` on those vaults. Do not copy this skill's evaluate
+page onto a Shield demo.
 
 ## Full path
 

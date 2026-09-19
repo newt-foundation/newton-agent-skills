@@ -1,0 +1,70 @@
+{
+  "type": "object",
+  "description": "VaultKit NPM1 composite envelope (modules are objects with id, policyDataAddress, wasmCid).",
+  "additionalProperties": true,
+  "required": ["params"],
+  "properties": {
+    "_manifest": {
+      "type": "object",
+      "properties": {
+        "magic": { "type": "string" },
+        "version": { "type": "integer" }
+      }
+    },
+    "modules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "policyDataAddress", "wasmCid"],
+        "properties": {
+          "id": { "type": "string" },
+          "policyDataAddress": { "type": "string" },
+          "wasmCid": { "type": "string" }
+        }
+      }
+    },
+    "params": {
+      "type": "object",
+      "properties": {
+        "vaultsfyi": {
+          "type": "object",
+          "properties": {
+            "apy_z_max": { "type": "number" },
+            "tvl_drawdown_24h_max_pct": { "type": "number" },
+            "tvl_drawdown_7d_max_pct": { "type": "number" },
+            "risk_score_floor": { "type": "number" },
+            "deny_on_allocation_change": { "type": "boolean" },
+            "deny_on_critical_flag": { "type": "boolean" },
+            "deny_on_corrupted": { "type": "boolean" }
+          },
+          "required": [
+            "apy_z_max",
+            "tvl_drawdown_24h_max_pct",
+            "tvl_drawdown_7d_max_pct",
+            "risk_score_floor",
+            "deny_on_allocation_change",
+            "deny_on_critical_flag",
+            "deny_on_corrupted"
+          ]
+        },
+        "chainalysis": {
+          "type": "object",
+          "properties": {
+            "deny_on_sanctioned": { "type": "boolean" },
+            "deny_on_high_risk_category": { "type": "boolean" },
+            "risk_categories_blocklist": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          },
+          "required": [
+            "deny_on_sanctioned",
+            "deny_on_high_risk_category",
+            "risk_categories_blocklist"
+          ]
+        }
+      },
+      "required": ["vaultsfyi"]
+    }
+  }
+}

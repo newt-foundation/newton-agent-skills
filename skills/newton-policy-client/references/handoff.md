@@ -8,8 +8,14 @@ path: `<policy-dir>/dist/policy-handoff.json`. Schema:
 
 Do **not** reconstruct chain ID, Policy / PolicyData addresses, entrypoint,
 params path, or `functionSignature` from chat when this file exists. If it is
-partial (addresses `null`), implement and test locally; stop before live
-`setPolicy` until `newton-policy` fills them.
+partial (`policy` is `null`), implement and test locally; stop before live
+`setPolicy` until `newton-policy` fills `policy`. Published-pack
+`policyData` may already be present after lookup; that does not mean the
+Policy is deployed.
+
+If `packs` is present, treat it as labels for the same positional
+`policyData` array. Do not reorder either array. `policyData` is the source
+of truth for `setPolicy` / wiring.
 
 Match `intent.functionSignature` byte-for-byte in the client. Named vs unnamed
 parameter lists are different strings.
@@ -43,6 +49,10 @@ Never put private keys, RPC URLs, JWTs, or secrets JSON in this file.
 `newton-policy` secrets upload needs `policyClient`, `policyData` from the
 policy handoff, and `ownerIsLoginWallet: true`. If owner is still the local
 key, do not hand off to secrets upload.
+
+Vault attach (`newton-vault-shield`) does not consume this file; it
+consumes the policy handoff and writes `shield-handoff.json`. Do not write
+a fake client-handoff to satisfy a Morpho brief.
 
 `newton-demo` copies `chainId`, `policyClient`, `userArgs`, `target`,
 `needsTokenApproval`, `eip712`, and `intent` into `demo-config.json`. Keep

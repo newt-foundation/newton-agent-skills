@@ -6,6 +6,7 @@
   "policyDir": "policies/my-policy",
   "policy": null,
   "policyData": [],
+  "packs": [],
   "entrypoint": "my_policy.allow",
   "expireAfterBlocks": null,
   "params": {

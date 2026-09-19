@@ -15,8 +15,12 @@ Use when:
 - The application already exists and was not designed around Newton
 
 The wrapper decodes known selectors, binds intent fields, then performs the
-equivalent action (`transferFrom` after an attested `transfer`, vault deposit
-after an attested `deposit`, and similar). It is not a generic call forwarder.
+equivalent action (`transferFrom` after an attested `transfer`, and
+similar). It is not a generic call forwarder.
+
+Do **not** use a wrapper to pretend you inherited Newton on Morpho, Euler,
+or Superform. Those protocols will not take `NewtonPolicyClient`. Load
+`newton-vault-shield` and attach a Shield clone instead.
 
 See [templates/DirectERC20TransferPolicyClient.sol](../templates/DirectERC20TransferPolicyClient.sol).
 

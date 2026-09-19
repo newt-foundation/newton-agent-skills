@@ -15,11 +15,19 @@ description: >-
 > friction instead of silently working around it.
 
 Build a generic product demo: policy + PolicyClient + a lite Next.js App
-Router UI. Do not assume a vertical (stablecoin, vaults, wallets) unless the
-user specifies one. An ERC-20 transfer wrapper is only the golden *example*.
+Router UI. Do not assume a vertical (stablecoin, vaults, wallets) unless
+the user specifies one. An ERC-20 transfer wrapper is only the golden
+*example*.
 
 Do **not** reimplement Rego, WASM, or Solidity in this skill. Load
 `newton-policy` and `newton-policy-client` and follow them.
+
+If the brief is **attach a Shield to an existing Morpho / Euler /
+Superform vault**, load `newton-vault-demo` (orchestrator) and
+`newton-vault-shield` instead of this skill's Next.js app. Do not inherit
+`NewtonPolicyClient` on those vaults. This template is a PolicyClient +
+EIP-712 `evaluateIntentDirect` wrapper; Shield UI is two-view deposit vs
+reallocate in `newton-vault-demo`.
 
 ## Choose the workflow first
 
@@ -93,11 +101,14 @@ Policy and client procedures live in those skills, not here.
 ## Brief → requirements
 
 Follow [references/brief.md](references/brief.md). Capture allow/deny
-conditions, the protected action (target, selector, user args), who
-`msg.sender` / `intent.from` is, chain, and whether a UI is in scope.
+conditions, named published packs (if any), the protected action (target,
+selector, user args), who `msg.sender` / `intent.from` is, chain, and
+whether a UI is in scope.
 
 If a product decision is missing, stop and ask. Do not invent a vertical,
-token address, or policy rule to keep moving.
+token address, pack id, or policy rule to keep moving. If the brief names
+packs, `newton-policy` binds published PolicyData — it does not scaffold a
+fresh oracle.
 
 ## Delegate policy and client
 
@@ -150,6 +161,8 @@ Tell the user:
 ## Out of scope
 
 - Reimplementing Rego, WASM, or Solidity (use the sibling skills)
+- Attaching a Shield to Morpho / Euler / Superform (use
+  `newton-vault-shield`; do not inherit `NewtonPolicyClient` on those vaults)
 - Operator / observability work
 - Relayed / meta-transaction designs that break `intent.from == msg.sender`
 - Putting the gateway API key in the browser

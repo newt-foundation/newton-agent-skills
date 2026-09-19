@@ -70,7 +70,8 @@ their rc files without asking.
 
 ## Decide whether login is needed
 
-Login is **not required** for scaffold, author, build, or local policy logic.
+Login is **not required** for scaffold, author, build, local policy logic,
+or `newton-cli policy packs list` / `show` (catalog lookup is config-free).
 Only enter this section for an authenticated dashboard/gateway operation.
 
 For gateway-key setup, check without exposing credentials:

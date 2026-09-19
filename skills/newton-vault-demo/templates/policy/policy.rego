@@ -1,0 +1,44 @@
+package morpho_vaultsfyi_reallocate
+
+import future.keywords
+
+default allow := false
+
+t := object.get(object.get(data.params, "params", {}), "vaultsfyi", object.get(data.params, "vaultsfyi", data.params))
+v := object.get(data.wasm, "vaultsfyi", data.wasm)
+
+deny contains "apy_spike" if v.apy_z_score > t.apy_z_max
+
+deny contains "tvl_drawdown_24h" if v.tvl_drawdown_24h_pct > t.tvl_drawdown_24h_max_pct
+
+deny contains "tvl_drawdown_7d" if v.tvl_drawdown_7d_pct > t.tvl_drawdown_7d_max_pct
+
+deny contains "risk_score_below_floor" if {
+    v.risk_score != null
+    v.risk_score < t.risk_score_floor
+}
+
+deny contains "allocation_changed" if {
+    v.allocation_changed_since_last
+    t.deny_on_allocation_change
+}
+
+deny contains "critical_flag" if {
+    v.has_critical_flag
+    t.deny_on_critical_flag
+}
+
+deny contains "vault_corrupted" if {
+    v.is_corrupted
+    t.deny_on_corrupted
+}
+
+ca_t := object.get(object.get(data.params, "params", {}), "chainalysis", object.get(data.params, "chainalysis", {}))
+ca_v := object.get(data.wasm, "chainalysis", {})
+
+deny contains "chainalysis_sanctioned" if {
+    object.get(ca_t, "deny_on_sanctioned", false)
+    object.get(ca_v, "sanctioned", false)
+}
+
+allow if count(deny) == 0

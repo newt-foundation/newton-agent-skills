@@ -3,6 +3,12 @@
 Use this for scaffold → author → build → simulate → iterate. Dashboard login
 and gateway API keys are not required.
 
+If the brief names published packs (`vaultsfyi`, `webacy`, `chainalysis`, …)
+or a composite, read [published-packs.md](published-packs.md) **before**
+authoring. Scaffold still creates a directory for *your* Rego. Do not copy
+pack source into this repo. Resolve PolicyData with
+`newton-cli policy packs show --format json`.
+
 ## Scaffold
 
 ```bash
@@ -35,6 +41,16 @@ Generated layout:
 The initial JS/Rego pair is a trivial allow stub. Do not treat it as a complete
 real policy.
 
+## Published packs vs a fresh oracle
+
+| Path | `policy.js` | Deploy |
+|---|---|---|
+| Brief names a pack / composite | Stub that returns namespaced fixture JSON so local simulate can evaluate Rego. Not production WASM. | Repeat `--policy-data-address` from `policy packs show`; skip auto PolicyData |
+| Brief needs a new oracle | Production WASM | Omit `--policy-data-address`; `policy deploy -p` auto-deploys one PolicyData |
+
+Local `policy simulate -p` always runs this directory's WASM, never the
+published pack WASMs. Live operators use the PolicyData you bind at deploy.
+
 ## Author
 
 First clarify:
@@ -49,12 +65,17 @@ Data model:
 
 | Source | Rego path |
 |---|---|
-| JSON returned by `policy.js` | `data.wasm.*` |
-| Policy params | `data.params.*` |
+| JSON returned by `policy.js` (fresh oracle) | `data.wasm.*` |
+| Published / composite WASM (namespaced) | `data.wasm.<pack_id>.*` |
+| Policy params (fresh) | `data.params.*` |
+| Policy params (composite) | `data.params.<pack_id>.*` |
 | Transaction intent | `input.*` |
 
 Local `policy simulate`, gateway `newt_simulatePolicy`, and live operators
 all inject WASM output under `data.wasm`. Do not read it from `data.data`.
+For composites, author against `data.wasm.vaultsfyi.*` /
+`data.wasm.chainalysis.*` (and the matching `data.params.<pack_id>.*`), not
+a flat `data.wasm.risk_score`.
 
 Entrypoint derives from the Rego package:
 `package my_policy` → `data.my_policy.allow`.
@@ -89,6 +110,12 @@ once, then read fields. Leave imports unused/commented when the policy does not
 need them.
 
 Keep returned fields stable because Rego reads them through `data.wasm`.
+
+For a published pack or composite, the stub `run()` should return a JSON
+object keyed by pack id so simulate matches live namespacing, for example
+`{ "vaultsfyi": { ... }, "chainalysis": { ... } }`. Drive allow vs deny by
+changing `configs/wasm_args.json` (or params / intent), not by pasting live
+oracle payloads from chat. Do not deploy that stub as PolicyData.
 
 ### `policy.rego`
 
@@ -209,6 +236,11 @@ Run at least:
 
 1. Expected allow case → ALLOWED
 2. Expected deny case → DENIED
+
+For a published composite (for example `vaultsfyi` + `chainalysis` on Base
+Sepolia, chain `84532`), those two cases are the gold-path check: namespaced
+stub WASM + Rego, then write `dist/policy-handoff.json` with `packs` and
+positional `policyData` from `policy packs show`. Lookup needs no `RPC_URL`.
 
 For WASM-only debugging:
 
