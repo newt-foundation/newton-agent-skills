@@ -201,7 +201,10 @@ Tell the user:
 2. **Composite:** same vault with `vaultsfyi` + `chainalysis` modules
    matching the policy handoff `packs[]` order on-chain.
 3. **Generic `sendCall`:** toy DemoVault or a vendor overlay this skill
-   does not wrap yet. Integration owns calldata integrity.
+   does not wrap yet. Encode calldata from the vault ABI.
+   `newton-vault-demo` selects this template for that branch. The chain
+   table is Ethereum Sepolia and Base Sepolia. Pack modules are one
+   `definePolicy().with(...)` chain in handoff order.
 
 ## Out of scope
 

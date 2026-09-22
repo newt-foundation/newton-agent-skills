@@ -1,13 +1,23 @@
 # Two-view Next.js app
 
+Shareholder deposit is ungated ERC-4626 on every branch. The curator view
+calls the same VaultKit action as the typed script.
+
 The filled dummy Morpho ndUSDC app is
 [`dummy-morpho-vault-demo`](https://github.com/newt-foundation/dummy-morpho-vault-demo).
 Clone that repo for the Base Sepolia two-allocator beat. Do not copy it
 back into this skills repo.
 
-For a **new** customer vault, copy [templates/app/](../templates/app/) to
-`demos/<slug>/` (gitignored in this skills repo). Fill `demo-config.json`
-from the policy and shield handoffs ([handoff.md](handoff.md)).
+[templates/app/](../templates/app/) is the Morpho `reallocate` UI
+(dummy market vs idle, optional Chainalysis allocator dropdown). Copy it
+only for a new Morpho vault. Fill `demo-config.json` from the policy and
+shield handoffs ([handoff.md](handoff.md)).
+
+Euler, Superform, and `sendCall` do not use that curator. If the brief
+asks for a UI, keep `/shareholder` and replace `/curator` with one button
+labeled from the brief. The server route runs the branch's overlay or
+`shield.sendCall`. Allow and deny that differ only by a pack input
+(`webacy.address`, `chainalysis.address`) send the same calldata twice.
 
 Do not copy `newton-demo/templates/app`. That UI signs an EIP-712 intent
 and calls `evaluateIntentDirect` on a `NewtonPolicyClient`.

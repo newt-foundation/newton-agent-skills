@@ -26,8 +26,9 @@ When `newton-cli` flags or the policy loop change, update `newton-policy` in the
 `newton-policy-client/templates/` holds copyable Foundry files (contract, tests,
 remappings, deploy/verify scripts). `newton-policy/templates/` holds the policy
 handoff JSON. `newton-vault-shield/templates/` holds VaultKit attach scripts and
-`shield-handoff.json`. `newton-vault-demo/templates/` holds envelope policy
-files, a filled Morpho e2e script, and a two-view Next.js app.
+`shield-handoff.json`. `newton-vault-demo/templates/` holds the Vaults.fyi / Chainalysis envelope
+reference, a filled Morpho e2e script, and the Morpho two-view Next.js app.
+`newton-vault-demo` is the orchestrator for every vault brief; Morpho is one branch.
 `newton-demo/templates/` holds a lite Next.js app and
 `demo-config.json`. Do not vendor `newton-contracts` or VaultKit source here.
 

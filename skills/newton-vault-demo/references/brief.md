@@ -1,23 +1,43 @@
 # Parse a vault brief
 
 Extract Product / Policy / App / Frontend / Scope the same way
-`newton-demo` does, then classify the vault path.
+`newton-demo` does, then classify the branch in
+[SKILL.md](../SKILL.md) before copying a template.
+
+## Branch
+
+Record vendor, chain, existing vault address, protected manager action,
+and pack ids. That record picks the template:
+
+- MetaMorpho → Morpho branch (`run-morpho-e2e.ts`)
+- Euler Earn → `shield.euler.reallocate`
+- EVault → `shield.eulerVault.*`
+- Superform → `shield` superform overlay
+- DemoVault or no typed overlay → `send-call.ts`
+- No vault address, or a Veda / BoringVault deploy → stop
 
 ## Product
 
-Who is the shareholder vs the curator? Deposit and withdraw on Morpho
-MetaMorpho are ordinary ERC-4626. They do **not** go through Shield.
-Newton typically gates manager calls (`reallocate` is the Morpho gold
-path), not `deposit`.
+Who is the shareholder vs the curator? Deposit and withdraw on an
+ERC-4626 vault do **not** go through Shield. Newton gates the manager
+call named in the brief (`reallocate` on Morpho and Euler Earn, a
+governor call on EVault, `sendCall` when there is no overlay).
 
-If the brief asks to gate deposits, stop and confirm. That is not the
-Morpho attach gold path.
+If the brief asks to gate deposits, stop and confirm.
 
 ## Policy
 
-Published packs via `newton-cli policy packs` only. Do not scaffold a
-fresh HTTP oracle because packs lookup failed — that is a CLI version
-problem ([orchestration.md](orchestration.md)).
+Published packs via `newton-cli policy packs` only. Bind the packs the
+brief names, in that order. Do not scaffold a fresh HTTP oracle because
+packs lookup failed — that is a CLI version problem
+([orchestration.md](orchestration.md)).
+
+`templates/policy/` is the Vaults.fyi and Chainalysis reference. A
+`webacy` brief uses the same NPM1 envelope with `params.params.webacy`
+and screens `prepareQueryOptions.webacy.address` (the pegged token).
+Allow and deny are the same manager call with a different address.
+
+The rest of this section is the Vaults.fyi / Morpho reference.
 
 Vaults.fyi indexes production networks. On Base Sepolia the dummy vault
 is not listed. `prepareQueryOptions.vaultsfyi` must override `network` +
@@ -64,20 +84,24 @@ Shield clone. Humans are Shield delegates.
 
 ## App
 
-VaultKit `createShield`. Intent `to` is the MetaMorpho vault. Intent
-`from` is the curator key and must equal `msg.sender`. Value is `0`.
-Newton `env` is `prod`. No relayer.
+VaultKit `createShield`. Intent `to` is the vault. Intent `from` is the
+curator key and must equal `msg.sender`. Value is `0`. Newton `env` is
+`prod`. No relayer. `functionSignature` comes from the policy handoff.
+On the Morpho branch it is
+`reallocate(((address,address,address,address,uint256),uint256)[])`.
 
 ## Frontend
 
-Two views, one vault:
+Two views, one vault, on every branch:
 
 1. **Shareholder** — connect, approve asset, `deposit`, show shares. No
    evaluate / attestation.
-2. **Curator** — reallocate through the Shield. If the brief is
-   two-allocator, a dropdown picks the allocator and the CTAs are
-   destination moves (dummy vs idle). Otherwise show allow vs deny
-   (task, blocked reason). API key stays on the server.
+2. **Curator** — the branch's manager call through the Shield. Morpho
+   two-allocator: an allocator dropdown, then destination CTAs (dummy vs
+   idle). Other branches: one action labeled from the brief, then allow
+   vs deny (task, blocked reason). API key stays on the server. Do not
+   copy the Morpho dummy-versus-idle controls onto Euler, Superform, or
+   `sendCall`.
 
 Dogfood may use one wallet for both views if that key is already owner /
 curator / allocator and a depositor.

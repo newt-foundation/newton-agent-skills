@@ -1,13 +1,15 @@
 ---
 name: newton-vault-demo
 description: >-
-  Orchestrate a vault-platform demo from a customer brief: bind published
-  packs with newton-policy, attach a VaultKit Shield with newton-vault-shield,
-  prove typed allow plus assertIntentBlocked deny, and optionally scaffold a
-  two-view local Next.js app (ungated shareholder deposit vs Shield-gated
-  curator reallocate). Use when the brief is Morpho, Euler, Superform, Shield,
-  vaultsfyi, or newton-morpho-shield-brief. Do not inherit NewtonPolicyClient
-  on Morpho. Headless wizard / Veda factory is newton-vault-wizard (not shipped).
+  Orchestrate any vault brief: bind the brief's published packs with
+  newton-policy, attach a VaultKit Shield with newton-vault-shield, prove one
+  allow plus assertIntentBlocked deny, and optionally scaffold a two-view
+  local Next.js app. Morpho + Vaults.fyi is the filled reference branch.
+  Euler, Superform, and sendCall (DemoVault or any selector without a typed
+  overlay) are other branches of this skill. Use when the brief is Morpho,
+  Euler, Superform, DemoVault, Shield, vaultsfyi, webacy, chainalysis, or
+  newton-morpho-shield-brief. Do not inherit NewtonPolicyClient on a vault
+  Newton does not own. Headless wizard / Veda factory is not shipped.
 ---
 
 # Newton Vault Demo
@@ -16,21 +18,29 @@ description: >-
 > friction instead of silently working around it.
 
 Conduct a vault brief from product copy to a runnable beat. This skill does
-not replace `newton-policy` or `newton-vault-shield`. It chooses a path,
-overrides sibling traps that fail a first-time Morpho + Vaults.fyi attach,
-and optionally copies a two-view wallet UI.
+not replace `newton-policy` or `newton-vault-shield`. It classifies the
+brief, runs the shared attach traps on every branch, and copies one vendor
+template. Morpho + Vaults.fyi is the filled reference, not the only path.
 
 Do **not** load `newton-demo` for Shield UI. That skill's Next app is a
-PolicyClient + EIP-712 `evaluateIntentDirect` wrapper. Morpho will not take
-`NewtonPolicyClient`.
+PolicyClient + EIP-712 `evaluateIntentDirect` wrapper. A vault Newton does
+not own will not take `NewtonPolicyClient`.
 
-## Choose the path first
+## Choose the branch first
 
-| Brief | Path |
-|---|---|
-| Existing Morpho / Euler / Superform / dummy MetaMorpho | **Attach** (`newton-vault-shield` after `newton-policy` packs). Gold for [`newton-morpho-shield-brief.txt`](../../newton-morpho-shield-brief.txt). |
-| Headless wizard, Veda factory, BoringVault deploy | **Wizard.** `newton-vault-wizard` is not shipped (NEWT-2555). Stop. Do not invent a factory flow. |
-| Solidity wrapper the user controls | Wrong skill. Use `newton-demo` + `newton-policy-client`. |
+Classify before copying any template. Do not copy
+[templates/run-morpho-e2e.ts](templates/run-morpho-e2e.ts) unless the brief
+is Morpho.
+
+| Brief | Branch | Template and action |
+|---|---|---|
+| Existing MetaMorpho / dummy Morpho vault | **Morpho** | [templates/run-morpho-e2e.ts](templates/run-morpho-e2e.ts). `shield.morpho.reallocate`. Filled UI: [`dummy-morpho-vault-demo`](https://github.com/newt-foundation/dummy-morpho-vault-demo). Gold brief: [`newton-morpho-shield-brief.txt`](../../newton-morpho-shield-brief.txt). |
+| Euler Earn | **Euler** | `eulerActions` → `shield.euler.reallocate`. See [newton-vault-shield vendors.md](../newton-vault-shield/references/vendors.md). |
+| Euler Vault Kit (EVault) | **EVault** | `eulerVaultActions` → governor `setLTV` / `setCaps` / IRM. |
+| Superform SuperVault | **Superform** | `superformActions`. Manager action named in the brief. |
+| DemoVault, or any vault/action with no typed overlay | **sendCall** | [newton-vault-shield templates/send-call.ts](../newton-vault-shield/templates/send-call.ts). Encode calldata from the vault ABI. `prepareQueryOptions.<pack_id>` comes from that pack. |
+| No vault yet; Veda factory, BoringVault, headless wizard | **Stop** | `newton-vault-wizard` is not shipped. Do not invent a factory flow. |
+| Solidity wrapper the user controls | **Wrong skill** | `newton-demo` + `newton-policy-client`. |
 
 Resume existing `policy-handoff.json`, `shield-handoff.json`, and
 `demos/<slug>/demo-config.json` before scaffolding. Do not invent vault,
@@ -48,15 +58,15 @@ Names only. Never ask for values, never print them.
 - Funded curator `PRIVATE_KEY` (`~/.newton/.env` or process env)
 - Gateway key from `newton-cli keys`, injected as **both** `API_KEY` and
   `NEWTON_API_KEY` ([credentials.md](references/credentials.md))
-- Pack secret **names** the policy requires (`VAULTS_FYI_API_KEY`; accept
-  local alias `VAULTSFYI_API_KEY`. If the brief names `chainalysis`, also
-  `CHAINALYSIS_SANCTIONS_KEY`)
+- Pack secret **names** the policy requires. `vaultsfyi`: `VAULTS_FYI_API_KEY`
+  (local alias `VAULTSFYI_API_KEY`). `chainalysis`: `CHAINALYSIS_SANCTIONS_KEY`.
+  `webacy`: `WEBACY_API_KEY`. Names come from the pack's `SecretsSchema`
 - Chain. Newton gateway `env` is always `prod`
 - RPC. Ethereum Sepolia and Base Sepolia have documented public defaults
   ([credentials.md](references/credentials.md)). If `RPC_URL` is Ethereum
   Sepolia while the brief is `84532`, do not send txs there — use the Base
   Sepolia default
-- Existing vault address (or confirmation to create a tiny dummy vault)
+- Existing vault address. If the brief has no vault, stop (wizard is not shipped)
 
 On the first turn also check:
 
@@ -70,32 +80,33 @@ workaround.
 
 ## Workflow
 
-1. Parse the brief ([brief.md](references/brief.md)). Confirm product /
-   policy / app / frontend / scope. Missing decisions → stop.
-2. Load `newton-policy`. Bind published packs only (`policy packs`). Copy
-   [templates/policy/](templates/policy/) into the policy dir so
-   `params_schema.json` accepts the VaultKit NPM1 envelope, Rego reads
-   `data.params.params.vaultsfyi`, and intent uses the VaultKit
-   `functionSignature` ([params-envelope.md](references/params-envelope.md)).
-   Local simulate allow vs deny against the stub `policy.js` before any
-   deploy. Vaults.fyi-only: omit / matching allocation hash vs
-   `deadbeef` → `allocation_changed`. Two-allocator / chainalysis: clean
-   address vs sanctioned address → `chainalysis_sanctioned`.
-3. Load `newton-vault-shield`. Copy
-   [templates/run-morpho-e2e.ts](templates/run-morpho-e2e.ts) over the
-   Morpho skeleton. Follow [attach-traps.md](references/attach-traps.md)
-   and [secrets-and-owner.md](references/secrets-and-owner.md) even when
-   they contradict `newton-vault-shield` — those overrides are from live
-   gateway behavior.
-4. Prove the gate with explicit confirmation: one mined typed
-   `reallocate` allow, one `assertIntentBlocked` deny (no mined deny tx).
-   Shareholder deposits are ordinary ERC-4626 and are not Newton-gated.
-5. Optional UI: copy [templates/app/](templates/app/) to `demos/<slug>/`
-   ([frontend.md](references/frontend.md)). For the filled dummy Morpho
-   vault, clone
-   [`dummy-morpho-vault-demo`](https://github.com/newt-foundation/dummy-morpho-vault-demo)
-   instead of scaffolding a second copy. `next dev` only. No Vercel
-   unless the user asked.
+1. Parse the brief ([brief.md](references/brief.md)) and pick the branch
+   above. Confirm product / policy / app / frontend / scope. Missing
+   decisions → stop. No vault address → stop.
+2. Load `newton-policy`. Bind only the published packs the brief names
+   (`policy packs`), in handoff order. `definePolicy().with(...).with(...)`
+   is **one expression**. Reassigning `policy = policy.with(next)` fails
+   typecheck because `PolicyDraft` tuples are fixed-length
+   ([orchestration.md](references/orchestration.md)). Copy the NPM1 envelope
+   shape ([params-envelope.md](references/params-envelope.md)).
+   [templates/policy/](templates/policy/) is the Vaults.fyi and Chainalysis
+   reference. For any other pack, keep `params.params.<pack_id>` and author
+   the deny rule from that pack's published schema. Local simulate allow vs
+   deny against the stub `policy.js` before any deploy.
+3. Load `newton-vault-shield` and copy **that branch's** template. Run
+   [attach-traps.md](references/attach-traps.md) and
+   [secrets-and-owner.md](references/secrets-and-owner.md) on every branch,
+   even when they contradict `newton-vault-shield`. The Morpho market and
+   `reallocate` signature sections apply only to the Morpho branch.
+4. Prove the gate with explicit confirmation: one mined allow, one
+   `assertIntentBlocked` deny (no mined deny tx). The action is the
+   branch's manager call. Shareholder deposits are ordinary ERC-4626 and
+   are not Newton-gated.
+5. Optional UI ([frontend.md](references/frontend.md)). Morpho branch:
+   clone [`dummy-morpho-vault-demo`](https://github.com/newt-foundation/dummy-morpho-vault-demo)
+   for the filled dummy, or copy [templates/app/](templates/app/). Other
+   branches: do not copy the dummy-versus-idle curator. `next dev` only.
+   No Vercel unless the user asked.
 
 ## Sibling overrides (do not "fix" by ignoring)
 
@@ -109,8 +120,9 @@ If a loaded skill disagrees, this table wins for vault demos:
 | Addresses | `getAddress()` before VaultKit |
 | `setParams` schema | NPM1 envelope; see [params-envelope.md](references/params-envelope.md) |
 | Secrets owner | Gateway matches API-key identity to Shield `getOwner()`. Transfer owner **or** use a curator-owned API key, then `setApprovedDelegate`. See [secrets-and-owner.md](references/secrets-and-owner.md) |
-| `functionSignature` | `reallocate(((address,address,address,address,uint256),uint256)[])` |
-| Vaults.fyi on testnet | `prepareQueryOptions.vaultsfyi.{network,vaultAddress,previousAllocationHash}` pointing at a **listed mainnet** vault. Pack wasm_args use `lastKnownAllocationHash` |
+| `functionSignature` | From the policy handoff. Morpho branch only: `reallocate(((address,address,address,address,uint256),uint256)[])` |
+| Pack inputs | `prepareQueryOptions.<pack_id>` for packs that ship `prepareQuery`. Webacy screens `address` (the pegged token). Chainalysis screens `address` (the allocator). Same calldata twice when the gate is that input |
+| Vaults.fyi on testnet | Only when `vaultsfyi` is bound. `prepareQueryOptions.vaultsfyi.{network,vaultAddress,previousAllocationHash}` pointing at a **listed mainnet** vault. Pack wasm_args use `lastKnownAllocationHash` |
 | CLI simulate | Unnamed VaultKit signature (or its ASCII hex). Named nested ABI fails parse |
 
 ## Checkpoints
@@ -131,7 +143,7 @@ Stop and get confirmation before:
 
 - `newton-cli vault` / `newton-cli shield`
 - Inheriting `NewtonPolicyClient` on Morpho / Euler / Superform
-- webacy unless the brief names it (chainalysis is in when the brief names two allocators / `chainalysis`)
+- Adding a pack the brief did not name
 - Wizard / Veda / BoringVault (`newton-vault-wizard`)
 - Putting `NEWTON_API_KEY` in the browser or `NEXT_PUBLIC_*`
 - Committing `policies/`, `shields/`, or `demos/` in this skills repo

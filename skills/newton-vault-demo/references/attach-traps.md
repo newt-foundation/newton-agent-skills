@@ -1,8 +1,12 @@
-# Attach traps (Morpho + vaultsfyi)
+# Attach traps
 
-Use [templates/run-morpho-e2e.ts](../templates/run-morpho-e2e.ts) instead
-of the `newton-vault-shield` Morpho skeleton. Default invocation prints a
-plan. Pass explicit `--` flags for live txs after confirmation.
+Checksum, `allowNewVersion`, `getAddress()`, gateway `env: "prod"`, and
+the secrets-owner order apply on every branch. Markets and the Morpho
+`reallocate` signature below apply only when the branch is Morpho.
+
+Morpho branch: use [templates/run-morpho-e2e.ts](../templates/run-morpho-e2e.ts)
+instead of the `newton-vault-shield` Morpho skeleton. Default invocation
+prints a plan. Pass explicit `--` flags for live txs after confirmation.
 
 ## Checksum
 

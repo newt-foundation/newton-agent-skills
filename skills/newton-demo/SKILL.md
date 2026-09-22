@@ -22,12 +22,13 @@ the user specifies one. An ERC-20 transfer wrapper is only the golden
 Do **not** reimplement Rego, WASM, or Solidity in this skill. Load
 `newton-policy` and `newton-policy-client` and follow them.
 
-If the brief is **attach a Shield to an existing Morpho / Euler /
-Superform vault**, load `newton-vault-demo` (orchestrator) and
+If the brief is **attach a Shield to an existing vault** (Morpho, Euler,
+Superform, or DemoVault), load `newton-vault-demo` (orchestrator) and
 `newton-vault-shield` instead of this skill's Next.js app. Do not inherit
 `NewtonPolicyClient` on those vaults. This template is a PolicyClient +
-EIP-712 `evaluateIntentDirect` wrapper; Shield UI is two-view deposit vs
-reallocate in `newton-vault-demo`.
+EIP-712 `evaluateIntentDirect` wrapper. Shield UI is the two-view app in
+`newton-vault-demo`; the Morpho reallocate screens are that skill's
+Morpho branch.
 
 ## Choose the workflow first
 

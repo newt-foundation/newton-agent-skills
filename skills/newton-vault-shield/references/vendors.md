@@ -50,8 +50,13 @@ unexpected calldata — do not guess.
 
 ## `sendCall` escape hatch
 
-Use when VaultKit has no typed helper for this vendor/action. The
-integration owns calldata integrity:
+Use when VaultKit has no typed helper for this vendor/action. Encode
+`data` with viem `encodeFunctionData` from the vault ABI and the same
+`functionSignature` as the policy intent. Do not hand-write hex.
+
+When allow and deny differ only by a pack input, send the same calldata
+twice and change `prepareQueryOptions.<pack_id>` (`webacy.address` is the
+pegged token, `chainalysis.address` is the screened allocator).
 
 ```typescript
 await shield.sendCall(
