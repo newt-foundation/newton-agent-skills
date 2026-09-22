@@ -30,9 +30,19 @@ or the pack's flat fields fails evaluate with missing property
 (`id`, `policyDataAddress`, `wasmCid`), not CID strings. Arrays must
 include `items` (AVS parse error otherwise: `missing field items`).
 
+## Other packs
+
+[templates/policy/](../templates/policy/) is the Vaults.fyi and Chainalysis
+reference. For `webacy` or any other published pack, keep the NPM1
+envelope and put that pack's params at `params.params.<pack_id>`. Rego
+reads `object.get(object.get(data.params, "params", {}), "<pack_id>", {})`
+and `object.get(data.wasm, "<pack_id>", {})`. Copy deny fields from the
+pack's published `ParamsSchema`, not from the vaultsfyi fixture.
+
 ## What to copy
 
-From [templates/policy/](../templates/policy/):
+From [templates/policy/](../templates/policy/) when the brief binds
+`vaultsfyi` and, if named, `chainalysis`:
 
 | File | Into the policy dir |
 |---|---|

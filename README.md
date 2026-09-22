@@ -17,7 +17,7 @@ not a protocol source checkout.
 | [`newton-policy`](skills/newton-policy/SKILL.md) | Installing the CLI, authoring a generic policy, binding published packs / composites (`policy packs`), and running scaffold → build → simulate (optional deploy) |
 | [`newton-policy-client`](skills/newton-policy-client/SKILL.md) | Integrating Newton into a Solidity contract you control (`NewtonPolicyClient`, `_validateAttestationDirect`, register/set-policy) |
 | [`newton-vault-shield`](skills/newton-vault-shield/SKILL.md) | Attaching a VaultKit Shield to a vault Newton does not own (Morpho / Euler / Superform / DemoVault): `createShield` → role grant → allow + deny |
-| [`newton-vault-demo`](skills/newton-vault-demo/SKILL.md) | Orchestrating a vault brief: published packs → Shield attach → typed allow/deny → optional two-view Next.js UI (shareholder deposit vs curator reallocate). Use for [`newton-morpho-shield-brief.txt`](newton-morpho-shield-brief.txt) |
+| [`newton-vault-demo`](skills/newton-vault-demo/SKILL.md) | Orchestrating any vault brief: published packs → Shield attach → allow/deny → optional two-view UI. Morpho + Vaults.fyi is the filled reference ([`newton-morpho-shield-brief.txt`](newton-morpho-shield-brief.txt)); Euler, Superform, and `sendCall` are other branches |
 | [`newton-demo`](skills/newton-demo/SKILL.md) | Turning a customer brief into policy + PolicyClient + a local Next.js demo (delegates to `newton-policy` and `newton-policy-client`; vault/Shield UI is `newton-vault-demo`) |
 
 All listed skills are draft v0 and under dogfood testing. Expect gaps; report friction instead of silently working around it.

@@ -18,7 +18,6 @@ import { definePolicy, createShield } from '@newton-xyz/vaultkit'
 import { morphoActions } from '@newton-xyz/vaultkit/vendors/morpho'
 import { vaultsfyi } from '@newton-xyz/policy-pack-vaultsfyi'
 import {
-  createPublicClient,
   createWalletClient,
   http,
   type Address,
@@ -73,7 +72,6 @@ if (!chain) {
 
 const account = privateKeyToAccount(requiredEnv('PRIVATE_KEY') as Hex)
 const rpc = rpcUrl(handoff.chainId)
-const publicClient = createPublicClient({ chain, transport: http(rpc) })
 const walletClient = createWalletClient({
   account,
   chain,
@@ -89,7 +87,6 @@ const shield = (
   await createShield({
     apiKey: requiredEnv('NEWTON_API_KEY'),
     walletClient,
-    publicClient,
     rpc,
     vault,
     policy,
