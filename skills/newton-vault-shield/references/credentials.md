@@ -44,7 +44,8 @@ upload returns `AuthorizationFailed`. Do **not** skip that check.
 
 Order: `setParams` and `setApprovedDelegate(curator)` **before**
 `setPolicyClientOwner(dashboardWallet)`, then `uploadSecrets`. After the
-transfer the curator cannot `setParams` / `setPolicy` on that clone.
+transfer the curator cannot `setParams` / `setPolicies` on that clone.
+The owner can replace the ordered set (1–8) on that same clone.
 Alternative: an API key whose dashboard identity is the curator address.
 Details: [`newton-vault-demo` secrets-and-owner.md](../../newton-vault-demo/references/secrets-and-owner.md).
 

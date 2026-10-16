@@ -85,7 +85,7 @@ extract requirements from the brief
 ```
 
 Stop for confirmation before: live policy deploy, live client deploy /
-`setPolicy`, gateway evaluate, and the first attested application tx.
+`setPolicies`, gateway evaluate, and the first attested application tx.
 Do not deploy to Vercel unless the user asked.
 
 ## Read these references
@@ -108,8 +108,8 @@ whether a UI is in scope.
 
 If a product decision is missing, stop and ask. Do not invent a vertical,
 token address, pack id, or policy rule to keep moving. If the brief names
-packs, `newton-policy` binds published PolicyData — it does not scaffold a
-fresh oracle.
+packs, `newton-policy` binds one published Policy per pack — it does not
+scaffold a fresh oracle or a PolicyData composite.
 
 ## Delegate policy and client
 
@@ -178,6 +178,6 @@ Tell the user:
 | Local `policy simulate` deny | `newton-policy` (Rego / `data.wasm.*` / intent fixture) |
 | `forge test` fail | `newton-policy-client` (binding or attestation checks) |
 | Gateway JSON-RPC / 401 | API key, owner ≠ login wallet, or wrong chain gateway |
-| `evaluationResult` false | Policy denied this intent; do not retry as a transport error |
+| `allowed` false | A policy in the set denied this intent; do not retry as a transport error |
 | Attested tx revert | Client checks (`intent.to`, signature, args) or missing token approval |
 | Browser cannot evaluate | API key leaked to `NEXT_PUBLIC_*`, or Route Handler missing |

@@ -8,13 +8,11 @@ default. First implementations should be non-upgradeable wrappers.
 ```solidity
 function initialize(
     address policyTaskManager,
-    address policy,
     address owner
 ) public initializer {
     __Ownable_init();
     _transferOwnership(owner);
     _initNewtonPolicyClient(policyTaskManager, owner);
-    _setPolicyAddress(policy);
 }
 ```
 
@@ -26,12 +24,10 @@ constructor() {
 }
 ```
 
-Still call `setPolicy` after the proxy is deployed. ERC-165 during
-construction is the same failure mode for implementation constructors; do not
-call `_setPolicy` from `initialize` unless the proxy is already live and
-`supportsInterface` will succeed on `address(this)` (the proxy). The safe
-sequence is: deploy proxy → initialize task manager/owner/policy address →
-owner `setPolicy`.
+Call `setPolicies` after the proxy is deployed. `_initPolicies(specs)` may
+run from `initialize` when the specs are already known; an empty list defers
+configuration. The usual sequence is: deploy proxy → initialize task manager
+and owner → owner `setPolicies` with the full ordered set.
 
 ## Storage
 
@@ -57,8 +53,8 @@ function initializeNewtonPolicyClient(
 }
 ```
 
-Then `setPolicyAddress` and `setPolicy` as owner calls. Do not try to pack
-`setPolicy` into the upgrade transaction's constructor.
+Then `setPolicies` as an owner call. Do not call `setPolicy` or
+`setPolicyAddress`.
 
 ## `supportsInterface`
 
@@ -75,19 +71,12 @@ function supportsInterface(bytes4 interfaceId)
 }
 ```
 
-Registry registration and `NewtonPolicy.setPolicy` both require
-`INewtonPolicyClient` via ERC-165.
-
-## Versioning
-
-Inheriting `NewtonPolicyClient` exposes `version()` from `SemVerMixin`.
-`setPolicyAddress` checks the policy factory against the TaskManager's runtime
-`minCompatiblePolicyVersion`.
+Registry registration checks `INewtonPolicyClient` via ERC-165. Preserve
+`supportsInterface` through `super`. Do not hardcode a pre-0.7 interface id.
+`setPolicies` checks `isPolicy` on the TaskManager's configured factory. It
+does not compare factory semantic versions inside `_setPolicies`.
 
 Those owner calls only work if the current `getOwner()` can sign. After
-`setPolicyClientOwner(loginWallet)`, the CLI cannot sign them (dashboard
-Turnkey / MetaMask). For CLI-driven updates, deploy a new wrapper client
-instead of mutating the old one; see
-[deployment-and-wiring.md](deployment-and-wiring.md). Do not apply that
-replace-the-client workaround to a long-lived public inherited address;
-that needs a dashboard signature this skill will not perform.
+`setPolicyClientOwner(loginWallet)`, this skill cannot sign a later
+`setPolicies` (dashboard Turnkey / MetaMask). The owner replaces the set on
+the same client. See [deployment-and-wiring.md](deployment-and-wiring.md).

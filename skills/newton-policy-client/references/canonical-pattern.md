@@ -81,53 +81,55 @@ Then execute those checked values. Never validate an attestation and then
 `call` caller-supplied `to` / `value` / `data` that were not compared with the
 intent.
 
-## Constructor versus `setPolicy`
+## Constructor versus `setPolicies`
 
 Safe in a non-upgradeable constructor:
 
 ```solidity
 _initNewtonPolicyClient(policyTaskManager, policyClientOwner);
-_setPolicyAddress(policy);
 ```
 
-Do **not** call `_setPolicy` / `setPolicy` from a constructor.
-`NewtonPolicy.setPolicy` ERC-165-checks the caller, and a contract has no
-runtime code during construction, so that call reverts with
-`InterfaceNotSupported`.
-
-Required post-deploy owner call:
+Do not pass a policy address into the constructor and do not call
+`setPolicy` or `setPolicyAddress`. Protocol 0.7 stores an ordered set on
+the client. Configure it after deploy, while the local key is still owner:
 
 ```solidity
-client.setPolicy(INewtonPolicy.PolicyConfig({
-    policyParams: bytes(paramsJson), // or hex"" when unused
-    expireAfter: expireAfterBlocks   // must be > 0
-}));
+INewtonPolicyClient.PolicySpec[] memory specs =
+    new INewtonPolicyClient.PolicySpec[](1);
+specs[0] = INewtonPolicyClient.PolicySpec({
+    policy: policy,
+    config: INewtonPolicy.PolicyConfig({
+        policyParams: bytes(paramsJson),
+        expireAfter: expireAfterBlocks // must be > 0
+    })
+});
+bytes32 policyId = client.setPolicies(specs);
 ```
 
-`expireAfter == 0` is rejected by PolicyData and produces attestations that
-expire in the same block they are created.
+Add up to 8 specs. Index 0 is evaluated first. The set allows only when
+every policy allows. `expireAfter == 0` reverts `ZeroExpireAfter`. More
+than 8 reverts `TooManyPolicies`. An empty array reverts `EmptyPolicySet`.
+An address the TaskManager factory does not return from `isPolicy` reverts
+`PolicyNotRegistered`.
 
 `cast` equivalent after deploy (do not use `newton-cli policy-client`):
 
 ```bash
-cast send 0xCLIENT "setPolicyAddress(address)" 0xPOLICY \
-  --rpc-url "$RPC_URL" --private-key "$PRIVATE_KEY"
-
-PARAMS=$(cast --from-utf8 "$(cat params.json)")
-cast send 0xCLIENT "setPolicy((bytes,uint32))" "($PARAMS, <blocks>)" \
+PARAMS=$(cast from-utf8 "$(cat params.json)")
+cast send 0xCLIENT \
+  'setPolicies((address,(bytes,uint32))[])' \
+  "[(0xPOLICY,($PARAMS,<blocks>))]" \
   --rpc-url "$RPC_URL" --private-key "$PRIVATE_KEY"
 ```
 
-`setPolicyAddress` sets the Policy **address**. `setPolicy` creates the
-client's `policyId`. Both are required before live evaluation if the
-constructor did not already bind the Policy address.
+`setPolicies` writes the ordered specs and the set `policyId` together.
+Read them back with `getPolicySetSnapshot()`, not `getPolicyAddress()`.
 
 Constructor `policyClientOwner` is the **local deploy key**, not the
-`newton-cli login` wallet. After these owner-only calls (and optional
-register), transfer ownership with `setPolicyClientOwner(loginWallet)` so
-secrets resolve. That transfer is not repeatable from the local key; later
-param/policy changes deploy a new client. See
-[deployment-and-wiring.md](deployment-and-wiring.md).
+`newton-cli login` wallet. After this call (and optional register),
+transfer ownership with `setPolicyClientOwner(loginWallet)` so secrets
+resolve. Later edits are another `setPolicies` by whoever `getOwner()` is.
+See [deployment-and-wiring.md](deployment-and-wiring.md).
 
 ## Intent encoding
 

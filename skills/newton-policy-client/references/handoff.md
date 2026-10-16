@@ -6,16 +6,15 @@ Read the policy handoff file before writing Solidity or sending txs. Default
 path: `<policy-dir>/dist/policy-handoff.json`. Schema:
 [newton-policy/references/handoff.md](../../newton-policy/references/handoff.md).
 
-Do **not** reconstruct chain ID, Policy / PolicyData addresses, entrypoint,
-params path, or `functionSignature` from chat when this file exists. If it is
-partial (`policy` is `null`), implement and test locally; stop before live
-`setPolicy` until `newton-policy` fills `policy`. Published-pack
-`policyData` may already be present after lookup; that does not mean the
-Policy is deployed.
+Do **not** reconstruct chain ID, Policy addresses, entrypoint, params path,
+or `functionSignature` from chat when this file exists. One policy handoff
+is one Policy. A client set is 1–8 of those files, in evaluation order. If
+`policy` is `null`, implement and test locally; stop before live
+`setPolicies` until `newton-policy` fills it.
 
-If `packs` is present, treat it as labels for the same positional
-`policyData` array. Do not reorder either array. `policyData` is the source
-of truth for `setPolicy` / wiring.
+Leave `policyData` empty. Protocol 0.7 does not bind a PolicyData array.
+WASM lives on the Policy (`wasmCid`, empty for pure Rego). Do not reorder
+the set when you copy addresses into `setPolicies`.
 
 Match `intent.functionSignature` byte-for-byte in the client. Named vs unnamed
 parameter lists are different strings.
@@ -41,14 +40,17 @@ Never put private keys, RPC URLs, JWTs, or secrets JSON in this file.
 | `needsTokenApproval` | yes for UI | `true` when the connected wallet must `approve` the client |
 | `eip712` | yes for UI | Fallback domain `name` / `version` if `eip712Domain()` reverts |
 | `intent` | yes | Same encoding as the policy handoff |
-| `policy` / `policyId` / `taskManager` / `owner` | after wiring | From getters |
+| `policy` | after wiring | First policy address, else `null`. A set uses `policies` |
+| `policies` | after wiring | Ordered `{ policy, handoff, expireAfterBlocks }`, length 1–8 |
+| `policyId` / `policyRevision` | after wiring | From `getPolicySetSnapshot()`, else `null` |
+| `taskManager` / `owner` | after wiring | From getters |
 | `ownerIsLoginWallet` | after wiring | `true` only after verified `setPolicyClientOwner` |
 | `registered` | after wiring | Whether `registerClient` ran |
 | `policyClientRegistry` | if registered | Registry address, else `null` |
 
-`newton-policy` secrets upload needs `policyClient`, `policyData` from the
-policy handoff, and `ownerIsLoginWallet: true`. If owner is still the local
-key, do not hand off to secrets upload.
+`newton-policy` secrets upload needs `policyClient`, each Policy address
+whose WASM calls `getSecrets()`, and `ownerIsLoginWallet: true`. If owner
+is still the local key, do not hand off to secrets upload.
 
 Vault attach (`newton-vault-shield`) does not consume this file; it
 consumes the policy handoff and writes `shield-handoff.json`. Do not write

@@ -30,11 +30,10 @@ calldata. Read the intent from `taskResponse.intent` (it must match
 
 ## Evaluation result
 
-The TaskManager interprets `taskResponse.evaluationResult` as allow/deny
-(`TaskLib.evaluateResult`). Typical allow encodings are ABI `true` or the
-string `"true"`. Anything else is deny.
+`taskResponse.allowed` is the set verdict. It is true only when every policy
+in the frozen set allowed. One deny makes `allowed` false.
 
-The mixin returns that boolean. Revert on `false`:
+The mixin returns the TaskManager's boolean. Revert when validation fails:
 
 ```solidity
 require(
@@ -49,16 +48,21 @@ marker. Replay of the same `taskId` after a successful allow reverts with
 
 ## Expiration
 
-Direct-path expiration is `block.number + policyConfig.expireAfter` at
-validation time. Stale responses also fail the task response window
-(`TaskResponseTooLate`) when `taskCreatedBlock` is too old.
+The task freezes `policies`, `policyRevision`, and `policyId` at admission.
+Submit that snapshot unchanged. `wasmArgs` has one entry per policy, in set
+order. A pure-Rego policy still has an empty entry.
+
+Direct-path expiration follows each spec's `expireAfter` (blocks). Stale
+responses also fail the task response window (`TaskResponseTooLate`) when
+`taskCreatedBlock` is too old.
 
 ## Policy ID mismatch
 
 If `taskResponse.policyId` is not this client's current `getPolicyId()`, the
 mixin reverts `Unauthorized("Policy ID does not match")`. That usually means
-`setPolicy` was skipped or the task was created against a different
-client/policy.
+`setPolicies` was skipped, the set was replaced after the task was created,
+or the task was created against a different client. Read
+`getPolicySetSnapshot()` and request a fresh evaluation after a replacement.
 
 ## Wrong sender / chain
 

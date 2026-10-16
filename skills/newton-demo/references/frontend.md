@@ -68,9 +68,10 @@ real `SIGNER_PRIVATE_KEY`. HTTP `newt_createTask` in
    `BigInt`; `functionSignature` is hex UTF-8 of the **named** ABI string).
 3. POST `{ policyClient, intent, intentSignature, wasmArgs? }` to
    `/api/evaluate`. Do not send the API key.
-4. Allow is `evaluationResult === true` (SDK) / non-zero
-   `evaluation_result` bytes (raw gateway). Deny is a completed evaluation;
-   do not retry as if the POST failed.
+4. Allow is `taskResponse.allowed === true` (every policy in the set
+   allowed). A gateway JSON field named `evaluation_result` is the same
+   verdict when it is still present: non-zero means allow. Deny is a
+   completed evaluation; do not retry as if the POST failed.
 5. On allow, `writeContract` the protected function with normalized
    `task`, `taskResponse`, and `signatureData` (`blsSignature` in the SDK
    return). Gateway JSON may use snake_case and byte arrays; the Route

@@ -4,9 +4,9 @@ Use this for scaffold → author → build → simulate → iterate. Dashboard l
 and gateway API keys are not required.
 
 If the brief names published packs (`vaultsfyi`, `webacy`, `chainalysis`, …)
-or a composite, read [published-packs.md](published-packs.md) **before**
-authoring. Scaffold still creates a directory for *your* Rego. Do not copy
-pack source into this repo. Resolve PolicyData with
+or more than one rule, read [published-packs.md](published-packs.md)
+**before** authoring. Scaffold one directory per policy. Do not copy pack
+source into this repo. Resolve each Policy with
 `newton-cli policy packs show --format json`.
 
 ## Scaffold
@@ -45,11 +45,12 @@ real policy.
 
 | Path | `policy.js` | Deploy |
 |---|---|---|
-| Brief names a pack / composite | Stub that returns namespaced fixture JSON so local simulate can evaluate Rego. Not production WASM. | Repeat `--policy-data-address` from `policy packs show`; skip auto PolicyData |
-| Brief needs a new oracle | Production WASM | Omit `--policy-data-address`; `policy deploy -p` auto-deploys one PolicyData |
+| Brief names a published Policy | Stub that returns this policy's fixture JSON so local simulate can evaluate Rego. Not a second oracle deploy | Bind the address from `policy packs show`. Do not pass `--policy-data-address` |
+| Brief needs a new policy | Production WASM when the rule needs an oracle; omit the oracle for pure Rego | `policy deploy -p` once. `wasmCid` lives on that Policy |
 
-Local `policy simulate -p` always runs this directory's WASM, never the
-published pack WASMs. Live operators use the PolicyData you bind at deploy.
+Local `policy simulate -p` always runs this directory's WASM. Live operators
+evaluate each Policy in the client set on its own. They do not merge
+`data.wasm` across policies.
 
 ## Author
 
@@ -65,17 +66,14 @@ Data model:
 
 | Source | Rego path |
 |---|---|
-| JSON returned by `policy.js` (fresh oracle) | `data.wasm.*` |
-| Published / composite WASM (namespaced) | `data.wasm.<pack_id>.*` |
-| Policy params (fresh) | `data.params.*` |
-| Policy params (composite) | `data.params.<pack_id>.*` |
+| JSON returned by this policy's `policy.js` | `data.wasm.*` |
+| This policy's params | `data.params.*` |
 | Transaction intent | `input.*` |
 
 Local `policy simulate`, gateway `newt_simulatePolicy`, and live operators
-all inject WASM output under `data.wasm`. Do not read it from `data.data`.
-For composites, author against `data.wasm.vaultsfyi.*` /
-`data.wasm.chainalysis.*` (and the matching `data.params.<pack_id>.*`), not
-a flat `data.wasm.risk_score`.
+all inject this policy's WASM output under `data.wasm`. Do not read it
+from `data.data`. A second rule is a second policy in the client set, not
+a `data.wasm.<pack_id>` namespace inside this Rego.
 
 Entrypoint derives from the Rego package:
 `package my_policy` → `data.my_policy.allow`.
@@ -237,10 +235,10 @@ Run at least:
 1. Expected allow case → ALLOWED
 2. Expected deny case → DENIED
 
-For a published composite (for example `vaultsfyi` + `chainalysis` on Base
-Sepolia, chain `84532`), those two cases are the gold-path check: namespaced
-stub WASM + Rego, then write `dist/policy-handoff.json` with `packs` and
-positional `policyData` from `policy packs show`. Lookup needs no `RPC_URL`.
+For a policy set (for example `vaultsfyi` and `chainalysis` on Base Sepolia,
+chain `84532`), run allow and deny in **each** policy directory, then write
+one `dist/policy-handoff.json` per policy. Lookup needs no `RPC_URL`. Leave
+`policyData` empty.
 
 For WASM-only debugging:
 
@@ -250,10 +248,10 @@ newton-cli policy-data simulate \
   --input-json '{"address":"0x1234..."}'
 ```
 
-Local execution has no live `(policy_client, policy_data)` secrets context, so
+Local execution has no live `(policy client, policy)` secrets context, so
 uploaded production secrets are not available. `--secrets-file` is only a
-local fixture path; live deployment/evaluation still uses client-scoped,
-encrypted secrets.
+local fixture path; live deployment/evaluation still uses encrypted secrets
+scoped to the client and that policy.
 
 ## Iterate
 

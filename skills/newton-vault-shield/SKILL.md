@@ -66,9 +66,10 @@ params, or private keys. Copying templates and typechecking can proceed
 before deploy secrets exist.
 
 If the Policy does not exist yet, run or hand off to `newton-policy`
-(published packs + composites) before live attach. Do not resolve
-PolicyData from chat or GitHub; that skill already used
-`newton-cli policy packs`.
+before live attach. A 0.7 client holds an ordered set of 1–8 Policies
+(`setPolicies`). Do not resolve addresses from chat or GitHub; that skill
+already used `newton-cli policy packs`. Do not call `setPolicy` or
+`setPolicyAddress` on the clone.
 
 ## Credential safety
 
@@ -90,10 +91,10 @@ Read [references/credentials.md](references/credentials.md). Short form:
 ## Core sequence
 
 ```text
-require policy-handoff.json with policy filled
-  → definePolicy({ chainId, env: 'prod' }).with(...) per packs[]
+require policy-handoff.json with policy filled (one file per policy, max 8)
   → copy templates into shields/<slug>/ (gitignored in this repo)
   → createShield({ vault, policy, policyAddress })
+  → owner setPolicies with the ordered set when the brief has more than one policy
   → grant vendor role to shield.policyClientAddress
   → setParams / uploadSecrets
   → typed allow (mined)

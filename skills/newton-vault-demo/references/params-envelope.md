@@ -1,5 +1,11 @@
 # VaultKit params envelope
 
+Protocol 0.7 does not compose packs by writing several `policyDataAddress`
+values into one Policy. Each rule is its own Policy, and the client set is
+`setPolicies` (1–8). Use this envelope only when a VaultKit `setParams` call
+on the installed package still requires it. Do not deploy a Policy from
+these `policyDataAddress` fields.
+
 VaultKit `setParams({ vaultsfyi: { ...inner } })` does **not** store the
 inner object as Policy params. It writes an NPM1 composite envelope:
 

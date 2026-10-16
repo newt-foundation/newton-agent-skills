@@ -6,20 +6,21 @@ Read the policy handoff before calling `createShield`. Default path:
 `<policy-dir>/dist/policy-handoff.json`. Schema:
 [newton-policy/references/handoff.md](../../newton-policy/references/handoff.md).
 
-Do **not** reconstruct chain ID, Policy / PolicyData addresses, pack ids,
-entrypoint, or `functionSignature` from chat when this file exists.
+Do **not** reconstruct chain ID, Policy addresses, pack ids, entrypoint, or
+`functionSignature` from chat when this file exists. `policyData` stays
+`[]`. A 0.7 Policy does not expose `getPolicyData()`.
 
 | Handoff state | What this skill may do |
 |---|---|
-| Missing file | Load `newton-policy` first. Do not scrape GitHub for PolicyData |
+| Missing file | Load `newton-policy` first. Do not scrape GitHub for addresses |
 | `policy` is `null` | Copy templates and typecheck. Do **not** live `createShield` |
-| `policy` filled, `packs` / `policyData` present | `definePolicy().with(...)` for those pack ids; `policyAddress: policy` |
-| `packs` absent (fresh oracle) | `policyFromAddress({ address: policy, chainId, env: 'prod' })`. Do not invent a pack module |
+| `policy` filled, one pack label | `definePolicy().with(...)` for that pack id; `policyAddress: policy` |
+| `packs` absent | `policyFromAddress({ address: policy, chainId, env: 'prod' })`. Do not invent a pack module |
+| Several policy handoffs | One `createShield` still takes a policy the VaultKit call accepts. The owner then `setPolicies` with the full ordered set (1–8). Do not fold them into one Policy via PolicyData addresses |
 
-If `packs` is present, treat it as labels for the same positional
-`policyData` array. Do not reorder either array. VaultKit matches declared
-modules to on-chain `getPolicyData()` at `createShield`; a mismatch throws
-before a vault action.
+If VaultKit still calls `getPolicyData()` and that call reverts on a 0.7
+policy, stop and report the friction. Do not deploy a pre-0.7 composite
+Policy to satisfy it.
 
 Install `@newton-xyz/policy-pack-<id>` for each pack id. If the npm package
 does not exist, **stop** — do not vendor pack source from
@@ -49,7 +50,7 @@ this file.
 | `vault` | yes | Existing vault address. Never invent |
 | `shield` | after attach | `policyClientAddress`, else `null` |
 | `policy` | after attach | Bound NewtonPolicy |
-| `policyData` / `packs` | yes | Copy from the policy handoff; do not reorder |
+| `policyData` / `packs` | yes | `policyData` stays `[]`. `packs` is a label list in set order, not a PolicyData array |
 | `role` | after grant | Vendor role name, whether granted, optional tx hash |
 | `paramsSet` / `secretsUploaded` | after those calls | Booleans only; no secret payloads |
 | `allow` | after typed allow | `action`, `transactionHash`, `taskId` |

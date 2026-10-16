@@ -106,9 +106,10 @@ shield.verification
 await shield.reverify()
 ```
 
-Verification rungs: address → oracle set / WASM CIDs → params decode →
-optional exact `expectedParams` bytes. A module-set mismatch vs
-`getPolicyData()` throws before a vault action.
+Verification rungs: address → oracle CID on the policy → params decode →
+optional exact `expectedParams` bytes. Confirm the clone's set with
+`getPolicySetSnapshot()` (ordered specs, 1–8). A 0.7 Policy has no
+`getPolicyData()` array.
 
 ## Two authorization gates
 

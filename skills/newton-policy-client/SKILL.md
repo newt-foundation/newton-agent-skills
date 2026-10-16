@@ -3,7 +3,7 @@ name: newton-policy-client
 description: >-
   Integrate Newton policy enforcement into a Solidity contract you control
   by inheriting NewtonPolicyClient, binding attested intents, validating with
-  _validateAttestationDirect, wiring setPolicy with cast, and submitting
+  _validateAttestationDirect, wiring setPolicies with cast, and submitting
   evaluations by signing an EIP-712 intent and POSTing newt_createTask to the
   chain's gateway. Use when adding a PolicyClient to an app contract you can
   change. Do not inherit this mixin on Morpho, Euler, or Superform (use
@@ -50,8 +50,9 @@ not ask for values yet):
 Do not invent contract addresses, chain IDs, or private keys. Local
 implementation and Foundry tests can proceed before deploy secrets exist.
 
-If the Policy does not exist yet, run or hand off to `newton-policy` before
-live `setPolicy`. Local client implementation can proceed in parallel once the
+If a Policy does not exist yet, run or hand off to `newton-policy` before
+live `setPolicies`. A client binds an ordered set of 1–8 already deployed
+Policies. Local client implementation can proceed in parallel once the
 intent shape is agreed.
 
 ## Credential safety
@@ -85,10 +86,10 @@ inspect application
   → add adversarial tests
   → forge build + forge test
   → optional deploy with local key as owner
-  → setPolicyAddress / setPolicy via cast (local key)
+  → setPolicies (ordered set, 1–8) via cast (local key)
   → optional registry registerClient via cast (local key)
   → setPolicyClientOwner(login wallet) via cast
-  → verify getters
+  → verify getPolicySetSnapshot
   → optional live evaluate: EIP-712 sign + gateway newt_createTask
 ```
 
@@ -154,12 +155,17 @@ Required shape for each protected entrypoint:
 2. `require(_validateAttestationDirect(task, taskResponse, signatureData), ...)`.
 3. Execute only the checked values.
 
-Constructor/`initialize` may call `_initNewtonPolicyClient` and
-`_setPolicyAddress`. Do **not** call `setPolicy` during construction.
+Constructor/`initialize` calls `_initNewtonPolicyClient(taskManager, owner)`.
+Leave the policy set empty there. The owner calls `setPolicies` after
+deployment. `_initPolicies` is only for a later initializer that already
+has the specs; an empty list defers configuration. Do not call
+`setPolicyAddress` or `setPolicy`. Those are the pre-0.7 single-policy
+calls. `setPolicies` replaces the whole ordered set (1–8). Every policy
+must allow. Do not sort or deduplicate entries.
 
 Protocol addresses: `newton-cli --chain-id <id> deployments show` for
-TaskManager and PolicyClientRegistry. Policy address comes from
-`newton-policy` or the user.
+TaskManager and PolicyClientRegistry. Policy addresses come from
+`newton-policy` or the user. Each Policy carries at most one WASM.
 
 ## Tests before deploy
 
@@ -179,12 +185,14 @@ After tests pass, if the user asked to deploy:
    Ethereum Sepolia (`11155111`), use
    `https://ethereum-sepolia-rpc.publicnode.com`. If `RPC_URL` is unset on
    any other chain, stop.
-3. Summarize chain, constructor args (owner = local key), `setPolicy` /
-   register txs, and the later `setPolicyClientOwner` to the login wallet.
+3. Summarize chain, constructor args (owner = local key), the `setPolicies`
+   set (addresses in order, each `expireAfter`), register txs, and the later
+   `setPolicyClientOwner` to the login wallet.
 4. Wait for explicit confirmation.
-5. Deploy, bind, optionally register, transfer owner, then verify getters.
+5. Deploy, `setPolicies`, optionally register, transfer owner, then verify
+   `getPolicySetSnapshot()`.
 
-Do **not** set the constructor owner to the login wallet. Then `setPolicy`
+Do **not** set the constructor owner to the login wallet. Then `setPolicies`
 would need a dashboard signature this skill cannot produce.
 
 Do **not** use `newton-cli policy-client` or `newton-cli task` for any
@@ -201,40 +209,35 @@ Gateway secrets, client-scoped simulate, and `newt_createTask` check
 Required first-time sequence, all signed by the local key:
 
 1. Deploy the client with constructor owner = local `PRIVATE_KEY` address.
-2. `setPolicyAddress` / `setPolicy` via `cast send` while that key is still
-   owner.
+2. `setPolicies` via `cast send` while that key is still owner. Pass the
+   complete ordered set (1–8). Each entry is `(policy, (params, expireAfter))`
+   with `expireAfter > 0`.
 3. Optional `registerClient` on PolicyClientRegistry via `cast send`.
 4. `setPolicyClientOwner(loginWallet)` via `cast send`.
-5. Verify `getOwner()` is the login wallet. Then `newton-policy` may upload
-   secrets.
+5. Verify `getOwner()` is the login wallet and `getPolicySetSnapshot()`
+   matches the set. Then `newton-policy` may upload secrets.
 
 Registry `setClientOwner` is **not** that call. It changes the
 PolicyClientRegistry record owner, not PolicyClient `getOwner()`. Secrets,
-`setPolicy`, and `setPolicyClientOwner` all use `getOwner()`. The two owners
+`setPolicies`, and `setPolicyClientOwner` all use `getOwner()`. The two owners
 can diverge if you transfer one and not the other. If the client is
 registered and you move contract ownership, also update the registry record
 so they match — they are not substitutes.
 
 That last `setPolicyClientOwner` step is not repeatable from the local key
-after transfer. After it, do not call `setPolicy` on the same client.
+after transfer. The login wallet can still call `setPolicies` on this same
+client. A routine param or membership change does **not** need a new client.
 
-**Treat the PolicyClient as replaceable instead of mutating it.** If params
-or the Policy address need to change, deploy a **new** client with the local
-key, bind it with `cast`, register it, call
-`setPolicyClientOwner(loginWallet)`, re-upload secrets, and point callers at
-the new address. Do not try to `setPolicy` on the old one.
+`setPolicies` replaces the entire set. Pass every entry you want to keep,
+including unchanged ones. Every successful call increments `policyRevision`,
+including an identical replacement, and the new `policyId` invalidates old
+attestations. Reordering changes the id. Cap is 8 (`TooManyPolicies`). An
+empty set reverts (`EmptyPolicySet`). Do not sort or deduplicate; repeated
+addresses stay separate entries.
 
-Replacing a client also means updating everything bound to the old address:
-
-- PolicyClientRegistry registration (`registerClient`)
-- Secrets (`secrets upload` is per `policy_client`)
-- Any app / SDK / `policy_client` address already in use
-- Identity links (tied to the client address)
-
-That is cheaper than a dashboard signing flow, as long as the client is not a
-long-lived public integration address. Inherited or already-published clients
-cannot cheaply use this workaround; stop and tell the user those owner calls
-need a dashboard/wallet signature this skill will not perform.
+After the transfer, this skill cannot sign `setPolicies` (dashboard Turnkey /
+MetaMask). Stop and tell the user the owner must sign that replacement.
+Do not deploy a second client to avoid that signature.
 
 Details: [references/deployment-and-wiring.md](references/deployment-and-wiring.md).
 
@@ -260,8 +263,9 @@ When the user asks for a gateway round-trip, do **not** call
 
    Bearer API key. JSON-RPC `id` is a UUID string. `timeout` is seconds.
    `function_signature` in the body is hex-encoded UTF-8 of the ABI string.
-4. Allow is a non-zero `task_response.evaluation_result`. Pass `task`,
-   `task_response`, and `signature_data` into `_validateAttestationDirect`.
+4. Allow is `task_response.allowed` (true only when every policy in the set
+   allowed). Pass `task`, `task_response`, and `signature_data` into
+   `_validateAttestationDirect`.
 
 ## Handoff from `newton-policy`
 
@@ -269,15 +273,17 @@ Read `<policy-dir>/dist/policy-handoff.json` (or the path reported by
 `newton-policy`). Schema and fields:
 [references/handoff.md](references/handoff.md).
 
-Consume that file; do not reconstruct chain ID, Policy / PolicyData,
+Consume that file; do not reconstruct chain ID, Policy addresses,
 entrypoint, params path, or `functionSignature` from chat when it exists.
+A set is several handoffs in order, capped at 8.
 If addresses are still `null`, implement and test locally; do not live-wire
 until the policy skill fills them.
 
 Write `client-handoff.json` at the Foundry project root after tests, and
-again after live wiring (addresses, `policyId`, `ownerIsLoginWallet`,
-registry, plus `userArgs` / `target` / `eip712` for a UI). Secrets upload
-in `newton-policy` needs `policyClient` plus `ownerIsLoginWallet: true`.
+again after live wiring (ordered `policies`, `policyId`, `policyRevision`,
+`ownerIsLoginWallet`, registry, plus `userArgs` / `target` / `eip712` for a
+UI). Secrets upload in `newton-policy` needs `policyClient`, each Policy
+address whose WASM calls `getSecrets()`, and `ownerIsLoginWallet: true`.
 If the user wants a frontend, hand off to `newton-demo` with that file.
 
 ## Completion report
@@ -289,10 +295,11 @@ Tell the user:
 - Intent encoding (target, selector, arguments, value)
 - Test commands and results
 - Paths of consumed `policy-handoff.json` and written `client-handoff.json`
-- For live work: chain, client/policy/TaskManager addresses, `getOwner()`
-  (should be the login wallet after transfer), registration state, gateway
-  evaluate result if requested, and that later param/policy changes need a
-  new client rather than mutating this one, without exposing secrets
+- For live work: chain, client address, ordered policy addresses,
+  `policyId` / `policyRevision` from `getPolicySetSnapshot()`, TaskManager,
+  `getOwner()` (login wallet after transfer), registration state, and
+  gateway evaluate result if requested, without exposing secrets. Later
+  set changes are another `setPolicies` by the current owner on this client.
 - Friction or gaps discovered in the skill
 
 ## Out of scope
