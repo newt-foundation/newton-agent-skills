@@ -5,6 +5,7 @@ import {Test} from "forge-std/Test.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {INewtonPolicy} from "newton-contracts/src/interfaces/INewtonPolicy.sol";
+import {INewtonPolicyClient} from "newton-contracts/src/interfaces/INewtonPolicyClient.sol";
 import {INewtonProverTaskManager} from "newton-contracts/src/interfaces/INewtonProverTaskManager.sol";
 import {NewtonMessage} from "newton-contracts/src/core/NewtonMessage.sol";
 import {DirectERC20TransferPolicyClient} from "../src/DirectERC20TransferPolicyClient.sol";
@@ -12,7 +13,7 @@ import {DirectERC20TransferPolicyClient} from "../src/DirectERC20TransferPolicyC
 /// @notice Adversarial suite for the golden ERC-20 wrapper.
 /// @dev Copy to `test/DirectERC20TransferPolicyClient.t.sol` (contract → `src/`).
 ///      Mocks are application-level: they record spent task IDs and honor
-///      `evaluationResult`. Do not invent BLS signatures.
+///      `allowed`. Do not invent BLS signatures.
 
 contract MockERC20 is ERC20 {
     constructor() ERC20("Mock USD", "mUSD") {}
@@ -22,28 +23,35 @@ contract MockERC20 is ERC20 {
     }
 }
 
-contract MockNewtonPolicy {
-    bytes32 public lastPolicyId;
-    INewtonPolicy.PolicyConfig public lastConfig;
+/// @dev Factory registry check used by `NewtonPolicyClient.setPolicies`.
+contract MockPolicyFactory {
+    mapping(address => bool) public registered;
 
-    function setPolicy(INewtonPolicy.PolicyConfig calldata policyConfig) external returns (bytes32) {
-        lastConfig = policyConfig;
-        lastPolicyId = keccak256(abi.encode(msg.sender, policyConfig.policyParams, policyConfig.expireAfter));
-        return lastPolicyId;
+    function register(address policy) external {
+        registered[policy] = true;
     }
 
-    function getPolicyConfig(bytes32) external view returns (INewtonPolicy.PolicyConfig memory) {
-        return lastConfig;
+    function isPolicy(address policy) external view returns (bool) {
+        return registered[policy];
     }
 }
 
-/// @dev Application-level TaskManager: records spent task IDs and honors evaluationResult.
+/// @dev Application-level TaskManager: records spent task IDs and honors `allowed`.
 contract MockTaskManager {
     error AlreadySpent();
     error StaleResponse();
 
     uint32 public taskResponseWindowBlock = 100;
+    MockPolicyFactory public immutable factory;
     mapping(bytes32 => bool) public spent;
+
+    constructor(MockPolicyFactory factory_) {
+        factory = factory_;
+    }
+
+    function policyFactory() external view returns (address) {
+        return address(factory);
+    }
 
     function minCompatiblePolicyVersion() external pure returns (string memory) {
         return "";
@@ -59,9 +67,7 @@ contract MockTaskManager {
             revert StaleResponse();
         }
         spent[task.taskId] = true;
-        bytes memory result = taskResponse.evaluationResult;
-        if (result.length == 0) return false;
-        return result[result.length - 1] != 0;
+        return taskResponse.allowed;
     }
 }
 
@@ -70,9 +76,10 @@ contract DirectERC20TransferPolicyClientTest is Test {
         bytes("function transfer(address recipient, uint256 amount)");
 
     MockERC20 internal token;
-    MockNewtonPolicy internal policy;
+    MockPolicyFactory internal factory;
     MockTaskManager internal taskManager;
     DirectERC20TransferPolicyClient internal client;
+    address internal policy = address(0xBEEF);
 
     address internal owner = address(0xA11CE);
     address internal sender = address(0xB0B);
@@ -82,16 +89,18 @@ contract DirectERC20TransferPolicyClientTest is Test {
 
     function setUp() public {
         token = new MockERC20();
-        policy = new MockNewtonPolicy();
-        taskManager = new MockTaskManager();
-        client = new DirectERC20TransferPolicyClient(
-            address(token), address(taskManager), address(policy), owner
-        );
+        factory = new MockPolicyFactory();
+        factory.register(policy);
+        taskManager = new MockTaskManager(factory);
+        client = new DirectERC20TransferPolicyClient(address(token), address(taskManager), owner);
 
+        INewtonPolicyClient.PolicySpec[] memory specs = new INewtonPolicyClient.PolicySpec[](1);
+        specs[0] = INewtonPolicyClient.PolicySpec({
+            policy: policy,
+            config: INewtonPolicy.PolicyConfig({policyParams: bytes("{}"), expireAfter: 25})
+        });
         vm.prank(owner);
-        policyId = client.setPolicy(
-            INewtonPolicy.PolicyConfig({policyParams: bytes("{}"), expireAfter: 25})
-        );
+        policyId = client.setPolicies(specs);
 
         token.mint(sender, amount * 2);
         vm.prank(sender);
@@ -301,15 +310,31 @@ contract DirectERC20TransferPolicyClientTest is Test {
             functionSignature: TRANSFER_SIGNATURE
         });
 
-        NewtonMessage.PolicyData[] memory policyData;
+        INewtonPolicyClient.PolicySpec[] memory specs = new INewtonPolicyClient.PolicySpec[](1);
+        specs[0] = INewtonPolicyClient.PolicySpec({
+            policy: policy,
+            config: INewtonPolicy.PolicyConfig({policyParams: bytes("{}"), expireAfter: 25})
+        });
+        bytes[] memory wasmArgs = new bytes[](1);
+        NewtonMessage.PolicyData[] memory oracleData;
+        NewtonMessage.PolicyTaskData[] memory policyTaskData = new NewtonMessage.PolicyTaskData[](1);
+        policyTaskData[0] = NewtonMessage.PolicyTaskData({
+            policyId: policyId,
+            policyAddress: policy,
+            policy: hex"",
+            policyData: oracleData
+        });
         task = INewtonProverTaskManager.Task({
             taskId: keccak256("task-1"),
             policyClient: address(client),
+            policyId: policyId,
+            policyRevision: client.policyRevision(),
             taskCreatedBlock: createdBlock,
             quorumThresholdPercentage: 100,
             intent: intent,
             intentSignature: hex"11",
-            wasmArgs: hex"",
+            policies: specs,
+            wasmArgs: wasmArgs,
             quorumNumbers: hex"00",
             initializationTimestamp: 1
         });
@@ -317,17 +342,10 @@ contract DirectERC20TransferPolicyClientTest is Test {
             taskId: task.taskId,
             policyClient: address(client),
             policyId: policyId,
-            policyAddress: address(policy),
             intent: intent,
             intentSignature: hex"11",
-            evaluationResult: allowed ? abi.encode(true) : abi.encode(false),
-            policyTaskData: NewtonMessage.PolicyTaskData({
-                policyId: policyId,
-                policyAddress: address(policy),
-                policy: hex"",
-                policyData: policyData
-            }),
-            policyConfig: INewtonPolicy.PolicyConfig({policyParams: bytes("{}"), expireAfter: 25}),
+            allowed: allowed,
+            policyTaskData: policyTaskData,
             initializationTimestamp: 1
         });
     }

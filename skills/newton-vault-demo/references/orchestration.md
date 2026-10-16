@@ -11,13 +11,15 @@ and follow them, applying the overrides in this skill's `SKILL.md`.
 | Shield handoff | `shields/<slug>/shield-handoff.json` |
 | Demo config | `demos/<slug>/demo-config.json` |
 
-If the policy handoff has `policy: null`, do not `createShield`. Published
-pack `policyData` from `policy packs show` is not a complete deploy.
+If the policy handoff has `policy: null`, do not `createShield`. A published
+pack address from `policy packs show` is not a complete deploy until that
+policy is on the client set.
 
 If a prior Shield clone's owner was already transferred to the dashboard
-wallet, the curator key cannot `setPolicy` / `setParams` on that version.
-Bump `version` and `allowNewVersion: true` for a new clone bound to the
-envelope Policy.
+wallet, the curator key cannot `setPolicies` / `setParams` on that clone.
+The owner replaces the ordered set with `setPolicies` on the same clone.
+Bump `version` and `allowNewVersion: true` only when the brief needs a new
+clone, not to edit the set.
 
 ## CLI
 
@@ -38,30 +40,22 @@ read `NEWTON_API_KEY`.
 | Euler / EVault / Superform | `newton-vault-shield` attach script, then the overlay in [vendors.md](../../newton-vault-shield/references/vendors.md). Do not copy `run-morpho-e2e.ts` |
 | sendCall | [newton-vault-shield/templates/send-call.ts](../../newton-vault-shield/templates/send-call.ts) |
 
-## Bind every pack in one expression
+## Several packs
 
-`PolicyDraft` tuples are fixed-length. This fails typecheck:
+Do not chain `definePolicy().with(a).with(b)` to put several oracles on one
+Policy. That was the pre-0.7 composite. Deploy or reuse one Policy per pack.
+The shield owner then calls `setPolicies` with those addresses in brief
+order (max 8).
 
-```typescript
-let policy = definePolicy(config).with(vaultsfyi)
-policy = policy.with(chainalysis)
-```
-
-Write the chain once, in `handoff.packs[]` order:
-
-```typescript
-const policy = definePolicy(config).with(vaultsfyi).with(chainalysis)
-```
-
-Install `@newton-xyz/policy-pack-<id>` for each id. [send-call.ts](../../newton-vault-shield/templates/send-call.ts)
-branches on the joined pack ids and throws when that combination is
-missing, so a new pack is a new branch, not a loop.
+Install `@newton-xyz/policy-pack-<id>` for each id when the attach script
+still imports a pack module. [send-call.ts](../../newton-vault-shield/templates/send-call.ts)
+branches on pack id for a single-policy attach.
 
 ## Order
 
-1. Policy: bind pack PolicyData in brief order → author envelope schema +
-   Rego under `params.params.<pack_id>` → stub WASM simulate allow/deny →
-   (confirm) deploy Policy.
+1. Policy: one directory per pack, in brief order. Reuse a published Policy
+   address from `policy packs show`, or `policy deploy -p` for a new policy.
+   Simulate allow/deny per directory. Do not pass `--policy-data-address`.
 2. Shield, every branch: checksum vault → `createShield` with
    `allowNewVersion` → `setParams` **while the curator still owns the
    clone** → grant the vendor role → secrets owner step

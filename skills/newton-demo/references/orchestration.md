@@ -14,14 +14,14 @@ Before scaffolding anything, look for existing files:
 | Demo config | `demos/<slug>/demo-config.json` |
 
 If both handoffs exist with addresses filled, skip to
-[frontend.md](frontend.md). If the policy handoff is partial (`policy` still
+[frontend.md](frontend.md). If a policy handoff is partial (`policy` still
 `null`), you may still copy the Next.js template and fill placeholders, but
-do not call `/api/evaluate` or send application txs. Published-pack
-`policyData` may already be filled from `policy packs show`; that is not a
-complete deploy.
+do not call `/api/evaluate` or send application txs. A published policy
+address from `policy packs show` is not a client `setPolicies` by itself.
 
-Do not reconstruct chain ID, Policy / PolicyData, `functionSignature`, or
-PolicyClient address from chat when a handoff file exists.
+Do not reconstruct chain ID, Policy addresses, `functionSignature`, or
+PolicyClient address from chat when a handoff file exists. A set is the
+ordered `policies` array on the client handoff (1–8).
 
 If the brief names published packs, load `newton-policy` and follow
 [published-packs.md](../../newton-policy/references/published-packs.md).
@@ -39,7 +39,7 @@ page onto a Shield demo.
 2. Load `newton-policy` and run its workflow (local simulate before any
    deploy). Write `policy-handoff.json`.
 3. Load `newton-policy-client` and run its workflow (Foundry tests before
-   live `setPolicy`). Write `client-handoff.json`, including the frontend
+   live `setPolicies`). Write `client-handoff.json`, including the frontend
    fields in that skill's [handoff.md](../../newton-policy-client/references/handoff.md).
 4. Copy [templates/app/](../templates/app/) and fill `demo-config.json`.
 5. Run locally. Live evaluate and the attested write need explicit
@@ -58,7 +58,7 @@ Stop and get confirmation before:
 |---|---|
 | Missing product decisions | Do not invent policy rules or addresses |
 | Live policy deploy | Uploads artifacts and spends gas |
-| Live client deploy / `setPolicy` / owner transfer | Binds a replaceable client |
+| Live client deploy / `setPolicies` / owner transfer | Binds the ordered policy set on the client |
 | First gateway evaluate | Uses `NEWTON_API_KEY` and the login-wallet owner check |
 | First attested application tx | Moves user funds / state |
 | Vercel / production deploy | Out of scope unless the user asked |

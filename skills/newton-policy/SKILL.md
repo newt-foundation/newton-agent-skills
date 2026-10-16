@@ -4,8 +4,9 @@ description: >-
   Install newton-cli, authenticate with Newton when required, create gateway
   API keys, and run the generic policy workflow (scaffold, author, build,
   simulate, iterate, and optionally deploy). Bind published policy packs
-  (vaultsfyi, webacy, chainalysis, …) and composites via
-  `newton-cli policy packs` instead of deploying a fresh oracle. Use when
+  (vaultsfyi, webacy, chainalysis, …) via `newton-cli policy packs`, one
+  Policy per rule. A client composes up to 8 of those Policies with
+  `setPolicies`. Use when
   setting up Newton, creating a Newton policy, composing published packs,
   or turning a policy goal into Rego + WASM.
 ---
@@ -65,18 +66,19 @@ deployment checkpoint after local allow/deny simulation passes.
 ### Published packs vs a fresh oracle
 
 If the brief names a published pack (`vaultsfyi`, `webacy`, `chainalysis`,
-`redstone`, …) or asks to compose more than one, **bind** a new Policy to
-those PolicyData contracts. Do not vendor pack source and do not auto-deploy
-a fresh `NewtonPolicyData` from the scaffolded `policy.js`.
+`redstone`, …) or asks for more than one rule, resolve each pack and deploy
+**one Policy per rule**. The PolicyClient binds them later with `setPolicies`
+(1–8, ordered). Do not vendor pack source. Do not pass `--policy-data-address`.
+A 0.7 Policy stores at most one `wasmCid` on the policy itself.
 
 Read [references/published-packs.md](references/published-packs.md). Resolve
 addresses with `newton-cli policy packs show` / `list --format json` — never
-from chat or GitHub. Scaffold a directory for *your* Rego; keep a stub
-`policy.js` that returns namespaced fixture JSON so local simulate can run.
+from chat or GitHub. Scaffold one directory per policy.
 
-Fresh-oracle (this directory's `policy.js` is the production WASM; omit
-`--policy-data-address` so `policy deploy -p` auto-deploys one PolicyData)
-only when the brief does **not** name a published pack.
+`policy deploy -p` publishes that directory's Rego and optional WASM onto
+one Policy. Pure Rego uses an empty `wasmCid` and does not deploy a
+PolicyData contract. Use that path when the brief does not already name a
+published Policy address.
 
 ### Local policy workflow (no dashboard login required)
 
@@ -88,8 +90,9 @@ Use for creating or testing policy logic:
    is not enough if `jco` is missing from `PATH`)
 3. Scaffold
 4. Author `policy.js`, `policy.rego`, configs, and schemas; review the
-   scaffolded non-secret `configs/deployment.toml`. For a published pack or
-   composite, stub `policy.js` and write Rego against `data.wasm.<pack_id>.*`
+   scaffolded non-secret `configs/deployment.toml`. For a published pack,
+   stub `policy.js` for that one policy's `data.wasm.*` so local simulate
+   can run. Do not merge several packs into one Rego namespace
 5. Build
 6. Simulate allow + deny cases
 7. Iterate locally
@@ -100,9 +103,9 @@ and toolchain setup, then
 For named packs, also read
 [references/published-packs.md](references/published-packs.md).
 Write a [policy-handoff.json](references/handoff.md) after simulate
-(`policy` null; published packs already fill `policyData`) and after deploy
-(`policy` filled) so `newton-policy-client`, `newton-vault-shield`, and
-`newton-demo` can consume it.
+(`policy` null; `policyData` stays `[]`) and after deploy (`policy` filled)
+so `newton-policy-client`, `newton-vault-shield`, and `newton-demo` can
+consume it. A set is several handoffs in evaluation order.
 
 ### Authenticated / live workflow
 
@@ -176,8 +179,8 @@ scaffold
   → policy build
   → policy simulate (allow + deny)
   → iterate
-  → write policy-handoff.json (policy null; published policyData from lookup)
-  → optional deploy (--policy-data-address per pack, same order)
+  → write policy-handoff.json (one file per policy; policy null)
+  → optional deploy (one `policy deploy -p` per policy; no --policy-data-address)
   → optional newton-policy-client (Solidity you control) or newton-vault-shield (Morpho / Euler attach)
   → optional secrets / live evaluate
 ```
@@ -186,11 +189,11 @@ Rules:
 
 - Code defines intent; schemas must match fields actually read by `policy.js`
   and Rego.
-- WASM JSON is `data.wasm.*` in Rego (local simulate, gateway simulate, and
-  live operators). Published composites use `data.wasm.<pack_id>.*`. Do not
-  use `data.data.*` for oracle output.
-- Never copy PolicyData addresses from chat or GitHub when
-  `newton-cli policy packs` answered.
+- WASM JSON is `data.wasm.*` inside that one policy (local simulate,
+  gateway simulate, and live operators). Do not use `data.data.*`. A policy
+  set does not merge WASM output across policies; every policy must allow.
+- Never copy addresses from chat or GitHub when `newton-cli policy packs`
+  answered. Do not repeat `--policy-data-address`.
 - `policy build` disables WASI `stdio`, `random`, `clocks`, `http`, and
   `fetch-event`. Use Newton WIT imports, not those globals.
 - Stay local until build/simulate behavior matches the user's goal.
@@ -205,11 +208,11 @@ Tell the user:
 - Allow and deny results
 - Path of the written `policy-handoff.json` (see
   [references/handoff.md](references/handoff.md))
-- For published packs: pack ids and positional PolicyData addresses from
-  `policy packs show` (not from chat)
+- For published packs: pack ids and Policy addresses from `policy packs show`
+  (not from chat), in the order the client set will use
 - Friction or gaps discovered in the skill/CLI
-- For live work: chain/environment and deployed PolicyData, Policy, and
-  PolicyClient addresses (without exposing secrets). If deploy secrets were
+- For live work: chain/environment, each Policy address in set order, and
+  the PolicyClient address (without exposing secrets). If deploy secrets were
   only in the process environment, remind the user to persist them in
   `~/.newton/.env`.
 
@@ -225,17 +228,16 @@ Test this draft with:
 3. **Expired/revoked credentials:** authenticated check fails → clean
    reauthentication.
 4. **Local-only policy:** complete scaffold → build → simulate without login.
-5. **Published composite:** `vaultsfyi` + `chainalysis` on Base Sepolia
-   (`84532`) → `policy packs show` for each id → namespaced stub simulate
-   allow+deny → write handoff with `packs` and positional `policyData`. Do
-   not auto-deploy PolicyData.
+5. **Policy set:** `vaultsfyi` + `chainalysis` on Base Sepolia (`84532`) →
+   `policy packs show` for each id → one directory and allow+deny simulate
+   per policy → one handoff each. Do not bind both oracles to one Policy.
 
 ## Out of scope
 
 - Building dashboard/explorer UI (a local attested-call demo is `newton-demo`)
 - Assuming use-case-specific product logic not provided by the user
-- Vendoring policy-pack source from `newton-policy-packs` (bind published
-  PolicyData; do not copy pack `policy.js`)
+- Vendoring policy-pack source from `newton-policy-packs` (bind the published
+  Policy address; do not copy pack `policy.js`)
 - Adding `newton-cli vault` / `shield` commands; published oracles are
   `policy packs` + this skill
 - Implementing a policy-client application contract; hand off to

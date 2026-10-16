@@ -23,7 +23,9 @@
     "dataEncoding": "transfer(address,uint256)"
   },
   "policy": null,
+  "policies": [],
   "policyId": null,
+  "policyRevision": null,
   "taskManager": null,
   "owner": null,
   "ownerIsLoginWallet": false,

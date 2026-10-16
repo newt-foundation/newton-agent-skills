@@ -177,8 +177,12 @@ EOF
 ```
 
 Optional params the SDK forwards when present: `quorum_number` (hex bytes,
-e.g. `"00"`), `quorum_threshold_percentage` (0–100), `wasm_args` (hex),
+e.g. `"00"`), `quorum_threshold_percentage` (0–100), `wasm_args`,
 `proof_cid`, `include_validate_calldata`.
+
+The admitted task freezes the client's ordered policy set. `wasmArgs` is one
+slot per policy, in that same order. A pure-Rego policy still takes an empty
+slot. Do not merge oracle JSON across policies.
 
 Do not echo the Authorization header or the signed JSON if it contains
 secrets in `wasm_args`.
@@ -194,14 +198,17 @@ Success (`status: "success"`) includes:
 |---|---|
 | `task_id` | Correlate logs; later replay tests |
 | `task` | First argument to `_validateAttestationDirect` |
-| `task_response` | Second argument (intent, `policy_id`, `evaluation_result`, …) |
+| `task_response` | Second argument (intent, `policy_id`, `allowed`, …) |
 | `signature_data` | Third argument (`blsSignature` in the SDK return) |
 
-The SDK treats `task_response.evaluation_result` as allow when the bytes
-decode to a non-zero integer (`hexToBigInt`). Zero bytes are deny. A deny is
-still a completed evaluation; do not retry as if the POST failed.
+On chain, allow is `taskResponse.allowed == true`, which is true only when
+every policy in the set allowed. A deny is still a completed evaluation; do
+not retry as if the POST failed. If the JSON still names
+`evaluation_result`, map a non-zero result to `allowed` before you describe
+the verdict, and submit the gateway's `task` / `task_response` bytes
+unchanged.
 
-`evaluation_result: true` is not on-chain execution. The user still submits
+`allowed: true` is not on-chain execution. The user still submits
 `task`, `taskResponse`, and `signatureData` to the PolicyClient.
 
 ## Do not

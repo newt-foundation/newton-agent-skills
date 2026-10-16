@@ -9,9 +9,8 @@ import {NewtonPolicyClient} from "newton-contracts/src/mixins/NewtonPolicyClient
 
 /// @title DirectERC20TransferPolicyClient
 /// @notice Canonical narrow wrapper: execute an ERC-20 transfer after direct Newton validation.
-/// @dev Deploy first, then have `policyClientOwner` call inherited `setPolicy`.
-///      `setPolicy` cannot run in this constructor because NewtonPolicy verifies
-///      the caller's ERC-165 interface, and a contract has no runtime code during construction.
+/// @dev Deploy first, then have `policyClientOwner` call inherited `setPolicies`
+///      with the ordered set (1–8). Do not call `setPolicy` or `setPolicyAddress`.
 contract DirectERC20TransferPolicyClient is NewtonPolicyClient {
     using SafeERC20 for IERC20;
 
@@ -27,18 +26,12 @@ contract DirectERC20TransferPolicyClient is NewtonPolicyClient {
 
     event ProtectedTransfer(address indexed sender, address indexed recipient, uint256 amount);
 
-    constructor(
-        address token_,
-        address policyTaskManager_,
-        address policy_,
-        address policyClientOwner_
-    ) {
-        require(token_ != address(0) && policyTaskManager_ != address(0) && policy_ != address(0));
+    constructor(address token_, address policyTaskManager_, address policyClientOwner_) {
+        require(token_ != address(0) && policyTaskManager_ != address(0));
         require(policyClientOwner_ != address(0));
 
         token = IERC20(token_);
         _initNewtonPolicyClient(policyTaskManager_, policyClientOwner_);
-        _setPolicyAddress(policy_);
     }
 
     /// @notice Transfer the configured token using a directly verified Newton policy response.

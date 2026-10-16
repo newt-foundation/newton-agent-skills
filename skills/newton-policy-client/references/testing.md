@@ -16,7 +16,7 @@ BLS signatures.
 | Case | Expected |
 |---|---|
 | Valid allow | Protected action executes |
-| Policy deny (`evaluationResult` false) | Revert `PolicyDenied` (or equivalent); no state change |
+| Policy deny (`allowed` false) | Revert `PolicyDenied` (or equivalent); no state change |
 | Replay of the same task | Revert spent/already-used |
 | Wrong `msg.sender` | Revert unauthorized sender |
 | Wrong `chainId` | Revert unauthorized chain |
@@ -31,9 +31,9 @@ BLS signatures.
 ## Fixtures
 
 The copied test template includes application-level `MockTaskManager` and
-`MockNewtonPolicy`. Reuse those mocks; they record spent task IDs and honor
-`evaluationResult`. You still need (for the golden wrapper) a token plus
-approvals.
+`MockPolicyFactory`. Reuse those mocks; they record spent task IDs and honor
+`taskResponse.allowed`. `setPolicies` checks `policyFactory().isPolicy`. You
+still need (for the golden wrapper) a token plus approvals.
 
 If the user already has a Foundry fork of the target chain, you may additionally
 run against live TaskManager addresses from
@@ -58,7 +58,9 @@ NewtonMessage.Intent memory intent = NewtonMessage.Intent({
 
 `task.intent` and `taskResponse.intent` must be identical. `task.policyClient`
 and `taskResponse.policyClient` must be the client under test.
-`taskResponse.policyId` must equal `client.getPolicyId()` after `setPolicy`.
+`taskResponse.policyId` must equal `client.getPolicyId()` after `setPolicies`.
+`task.policyRevision` and `task.policies` must match that snapshot. `task.wasmArgs`
+has one entry per policy.
 
 ## Compile gate
 

@@ -22,21 +22,23 @@ Run this before compiling is considered done. Fail closed.
 
 ## Setup
 
-- [ ] Constructor/`initialize` calls `_initNewtonPolicyClient` and
-      `_setPolicyAddress` only
-- [ ] `setPolicy` happens after deployment
-- [ ] `expireAfter > 0`
+- [ ] Constructor/`initialize` calls `_initNewtonPolicyClient` only
+- [ ] `setPolicies` happens after deployment and replaces the whole ordered
+      set (1–8). No `setPolicy` / `setPolicyAddress`
+- [ ] Each `expireAfter > 0`, params ≤ 65,536 bytes, and every address passes
+      factory `isPolicy`
 - [ ] TaskManager and Policy addresses came from the user or
       `newton-cli deployments show` / a prior `newton-policy` deploy; they were
       not invented
 - [ ] Constructor `policyClientOwner` is the local deploy key, not the
       dashboard / `newton-cli login` wallet
-- [ ] After `setPolicy` (and optional register), ownership is transferred to
+- [ ] After `setPolicies` (and optional register), ownership is transferred to
       the login wallet with `setPolicyClientOwner` when secrets or gateway
       evaluate are in scope. Do not use registry `setClientOwner` for that
       (registry record only; the two owners can diverge)
-- [ ] After that transfer, do not plan `setPolicy` on the same client;
-      replace the client instead (see
+- [ ] Later param or membership changes are another `setPolicies` by the
+      current owner on this client. Preserve order. Do not deploy a
+      replacement client for that (see
       [deployment-and-wiring.md](deployment-and-wiring.md))
 - [ ] Live evaluate uses EIP-712 signing + gateway `newt_createTask`, not
       `newton-cli policy-client` or `newton-cli task` (see

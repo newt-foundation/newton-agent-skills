@@ -12,8 +12,11 @@ Network: Base Sepolia (`84532`). Newton gateway `env`: `prod`.
 | Dummy MetaMorpho (ndUSDC) | `0xC21e09A657Cf71F541997A82174299a1Af39782E` |
 | Circle USDC | `0x036CbD53842c5426634e7929541eC2318f3dCF7e` |
 | Morpho Blue | `0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb` |
-| vaultsfyi PolicyData | `0x443487D506eEc522e5fb5075eBDbD7496DB454dF` |
-| chainalysis PolicyData | `0xdC2e9d30B8e415F907e39f0bfe22974B9894740F` |
+| vaultsfyi PolicyData (pre-0.7 leftover) | `0x443487D506eEc522e5fb5075eBDbD7496DB454dF` |
+| chainalysis PolicyData (pre-0.7 leftover) | `0xdC2e9d30B8e415F907e39f0bfe22974B9894740F` |
+
+Do not pass those PolicyData addresses to `policy deploy` or `setPolicies`.
+A 0.7 set uses Policy addresses from `newton-cli policy packs show`.
 
 Checksum with `getAddress()` before VaultKit. An earlier mixed-case
 spelling of the dummy vault was rejected.

@@ -25,9 +25,10 @@ Record:
 - `policyClientRegistry` (needed for identity linking; optional for a local
   demo that never uses IdentityRegistry)
 
-Policy and PolicyData addresses come from
+Policy addresses come from each policy's
 `<policy-dir>/dist/policy-handoff.json` after a completed `newton-policy`
-deploy. Do not reconstruct them from chat when that file exists. See
+deploy. A set is those addresses in the order the user wants evaluated.
+Do not reconstruct them from chat when those files exist. See
 [handoff.md](handoff.md).
 
 ## Foundry dependency
@@ -81,14 +82,14 @@ Live wiring uses two identities:
 
 | Role | Who | What it can sign |
 |---|---|---|
-| Local deploy key | `PRIVATE_KEY` (Foundry / `cast`) | Deploy, `setPolicy`, register, `setPolicyClientOwner` |
+| Local deploy key | `PRIVATE_KEY` (Foundry / `cast`) | Deploy, `setPolicies`, register, `setPolicyClientOwner` |
 | Login wallet | Address printed by `newton-cli login` (dashboard Turnkey / MetaMask) | Gateway secrets / `newt_createTask`. This skill **cannot** sign as this wallet |
 
 Gateway secrets upload checks `getOwner()` on the PolicyClient against the
 dashboard identity behind the API key. For secrets to resolve, the login
 wallet must end up as `getOwner()`.
 
-Do **not** pass the login wallet as constructor `owner`. Then `setPolicy`
+Do **not** pass the login wallet as constructor `owner`. Then `setPolicies`
 would need a dashboard signature this skill cannot produce, and must not
 attempt in the browser.
 
@@ -98,7 +99,7 @@ wallet's private key (Turnkey / MetaMask will not give one to the CLI).
 
 ## Deploy the client
 
-Constructor args for the golden wrapper: token, TaskManager, Policy, owner.
+Constructor args for the golden wrapper: token, TaskManager, owner.
 `owner` must be the local key's address, for example:
 
 ```bash
@@ -111,7 +112,6 @@ Never print the key. Prefer the copied
 ```bash
 export TOKEN=<token>
 export TASK_MANAGER=<taskManager>
-export POLICY=<policy>
 export POLICY_CLIENT_OWNER=<localKeyAddress>
 forge script script/DeployPolicyClient.s.sol:DeployPolicyClient \
   --rpc-url "$RPC_URL" \
@@ -122,27 +122,37 @@ forge script script/DeployPolicyClient.s.sol:DeployPolicyClient \
 `forge create` with the same constructor args is equivalent if the user already
 uses that flow.
 
-Then the **current** owner (still the local key) binds policy configuration
-with `cast`. Do not use `newton-cli policy-client`.
+Then the **current** owner (still the local key) replaces the client's
+policy set with one `cast` call. Do not use `newton-cli policy-client`.
+Do not call `setPolicyAddress` or `setPolicy`.
 
 ```bash
-cast send 0xCLIENT "setPolicyAddress(address)" 0xPOLICY \
+PARAMS_0=$(cast from-utf8 "$(cat policies/first/configs/params.json)")
+PARAMS_1=$(cast from-utf8 "$(cat policies/second/configs/params.json)")
+cast send "$POLICY_CLIENT" \
+  'setPolicies((address,(bytes,uint32))[])' \
+  "[($POLICY_0,($PARAMS_0,<blocks>)),($POLICY_1,($PARAMS_1,<blocks>))]" \
   --rpc-url "$RPC_URL" --private-key "$PRIVATE_KEY"
-
-PARAMS=$(cast --from-utf8 "$(cat params.json)")
-cast send 0xCLIENT "setPolicy((bytes,uint32))" "($PARAMS, <blocks>)" \
-  --rpc-url "$RPC_URL" --private-key "$PRIVATE_KEY"
+cast call "$POLICY_CLIENT" \
+  'getPolicySetSnapshot()(bytes32,uint64,(address,(bytes,uint32))[])' \
+  --rpc-url "$RPC_URL"
 ```
 
-`setPolicyAddress` writes the Policy address (needed if the constructor used
-`address(0)` or you are rebinding). If the constructor already called
-`_setPolicyAddress`, `setPolicy` is still required to create `policyId`.
-Ask for `<blocks>` if the user has not supplied an expiration policy;
-`expireAfter` must be greater than 0.
+One policy uses a one-element array. The set is ordered, length 1–8.
+Each `expireAfter` is in blocks and must be greater than 0. Ask for the
+window if the user has not supplied one. Params bytes must match that
+policy's schema and stay at or under 65,536 bytes. Each address must be a
+policy the TaskManager's factory returns from `isPolicy`. Do not sort or
+deduplicate; a repeated address is a separate entry.
 
-Finish **all** owner-only client writes (`setPolicyAddress`, `setPolicy`,
-and optional register below) before transferring ownership. After transfer,
-the local key can no longer call them.
+`setPolicies` writes the whole set and the set's `policyId` in that one
+transaction. A second call replaces the set again and bumps
+`policyRevision` even when the specs are unchanged. Old attestations stop
+matching `getPolicyId()`.
+
+Finish **all** owner-only client writes (`setPolicies` and optional
+register below) before transferring ownership. After transfer, the local
+key can no longer call them. The new owner can.
 
 ## Register
 
@@ -167,7 +177,7 @@ cast call 0xREGISTRY "getClientRecord(address)" 0xCLIENT --rpc-url "$RPC_URL"
 
 | Call | What it changes | Used by |
 |---|---|---|
-| `cast send … setPolicyClientOwner(loginWallet)` | PolicyClient `getOwner()` | Secrets, `setPolicy`, later `setPolicyClientOwner`, gateway `newt_createTask` |
+| `cast send … setPolicyClientOwner(loginWallet)` | PolicyClient `getOwner()` | Secrets, `setPolicies`, later `setPolicyClientOwner`, gateway `newt_createTask` |
 | `cast send … setClientOwner(client, loginWallet)` on the registry | PolicyClientRegistry record owner | Identity linking directory |
 
 Do not use registry `setClientOwner` as a substitute for
@@ -177,7 +187,7 @@ The two owners can diverge if you transfer one and not the other. After
 `setPolicyClientOwner`, `getOwner()` is the login wallet but the registry
 record still names the local key until you also `setClientOwner` on the
 registry. After registry `setClientOwner` alone, the registry names the
-login wallet but secrets, evaluate, and `setPolicy` still require the local
+login wallet but secrets, evaluate, and `setPolicies` still require the local
 key because `getOwner()` did not move.
 
 If the client is registered and you move contract ownership, update both.
@@ -201,32 +211,25 @@ Do not confuse this with registry `setClientOwner` (registry record only).
 See [Two owners](#two-owners-do-not-mix-these-up).
 
 This transfer is one-way for the local key. The dashboard wallet is Turnkey /
-MetaMask; this skill cannot sign later `setPolicy` on this client.
+MetaMask; this skill cannot sign later `setPolicies` on this client. The
+owner can. Replacing the set on this client is the configuration path.
 
-## Treat the client as replaceable
+## Replace the set on the same client
 
-If params or the Policy address need to change after ownership transfer, do
-**not** call `setPolicy` on the old client. Deploy a new one:
+Params, membership, and order change with another `setPolicies` by the
+current `getOwner()`. Deploying a new client is not the way to edit the set.
 
-1. Deploy with the local key as owner.
-2. `setPolicyAddress` / `setPolicy` via `cast`.
-3. `registerClient` if registration is in scope.
-4. `setPolicyClientOwner(loginWallet)`.
-5. Re-upload secrets against the **new** `policy_client`.
-6. Point every caller at the new address.
+Pass the entire desired list, including unchanged entries. Every successful
+replacement increments `policyRevision` and changes `policyId`, so previous
+attestations no longer validate. Read the new id, revision, and specs back
+with `getPolicySetSnapshot()` in one call. Separate getter calls can straddle
+an update.
 
-Everything bound to the old client address must be updated:
-
-- Registry registration (`registerClient`)
-- Secrets (`secrets upload` is scoped to `(policy_client, policy_data)`)
-- Any app / SDK / `policy_client` already in use
-- Identity links (docs treat them as tied to the client address)
-
-That is cheaper than a dashboard signing flow when the client is a narrow
-wrapper / demo address. If the client is a long-lived public integration
-address (inherited production contract, published SDK default, and similar),
-do not silently replace it. Tell the user that mutating it needs a dashboard
-wallet signature this skill will not perform.
+After ownership transfer, tell the user the login wallet must sign that
+transaction. Do not work around it by deploying another client. Secrets for
+a policy that stays in the set do not need a new upload just because the
+revision changed. A newly added policy whose WASM calls `getSecrets()` still
+needs its own upload, scoped to this client and that policy.
 
 ## Verify configuration
 
@@ -235,7 +238,7 @@ After wiring, run
 
 ```bash
 RPC_URL="$RPC_URL" POLICY_CLIENT=0xCLIENT \
-  EXPECTED_POLICY=0xPOLICY \
+  EXPECTED_POLICIES=0xPOLICY_0,0xPOLICY_1 \
   EXPECTED_TASK_MANAGER=0xTASK_MANAGER \
   EXPECTED_OWNER=0xLOGIN_WALLET \
   ./script/verify-policy-client.sh
@@ -244,8 +247,8 @@ RPC_URL="$RPC_URL" POLICY_CLIENT=0xCLIENT \
 The client must report:
 
 - `getNewtonPolicyTaskManager()` = intended TaskManager
-- `getPolicyAddress()` = intended Policy
-- `getPolicyId() != bytes32(0)`
+- `getPolicySetSnapshot()` nonzero `policyId`, `policyRevision >= 1`, and
+  the ordered specs (1–8)
 - `getOwner()` = the `newton-cli login` wallet (not the local deploy key)
 
 Then write `client-handoff.json` ([handoff.md](handoff.md)).

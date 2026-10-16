@@ -27,9 +27,12 @@ secret. The 400 body names public Ethereum addresses.
 6. `uploadSecrets`
 7. Typed allow / deny
 
-After step 4 the curator **cannot** `setPolicy` or `setParams` on that
-clone. Wrong params or a new Policy address → new Shield `version`, not
-another `setParams` from the curator key.
+After step 4 the curator **cannot** `setPolicies` or `setParams` on that
+clone. The dashboard owner replaces the ordered policy set with
+`setPolicies` on the same clone (1–8, full list each time). That bumps
+`policyRevision` and invalidates old attestations. Do not deploy a new
+Shield version just to change the set. The curator key still cannot send
+that call.
 
 **B. Curator-owned API key**
 

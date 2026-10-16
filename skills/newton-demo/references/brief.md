@@ -13,7 +13,7 @@ Otherwise derive the protected action from the brief.
 |---|---|
 | Allow / deny conditions | Becomes `policy.rego` + params in `newton-policy` |
 | External data the oracle needs | Becomes `policy.js`, `wasm_args`, optional `getSecrets()` |
-| Published packs | If the brief names `vaultsfyi`, `webacy`, `chainalysis`, `redstone`, … bind those PolicyData. Do **not** scaffold a fresh oracle. `newton-policy` uses `policy packs show` |
+| Published packs | If the brief names `vaultsfyi`, `webacy`, `chainalysis`, `redstone`, … one Policy per pack, then a client set of at most 8. Do **not** scaffold a fresh oracle or bind several PolicyData contracts to one Policy. `newton-policy` uses `policy packs show` |
 | Existing vault attach | If the brief gates Morpho / Euler / Superform / DemoVault manager actions on a vault Newton does not own, the client is a Shield (`newton-vault-shield`), not a Foundry `NewtonPolicyClient` |
 | Protected action | Function the PolicyClient exposes after `_validateAttestationDirect` |
 | Downstream intent | Six-field `NewtonMessage.Intent` (`to`, `value`, named `functionSignature`, `data`) |
