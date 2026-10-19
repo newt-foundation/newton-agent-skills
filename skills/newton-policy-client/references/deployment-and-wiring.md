@@ -122,6 +122,34 @@ forge script script/DeployPolicyClient.s.sol:DeployPolicyClient \
 `forge create` with the same constructor args is equivalent if the user already
 uses that flow.
 
+### Gas: take the node's estimate, then verify the deploy
+
+On current Ethereum Sepolia, forge's local simulation badly underestimates
+contract creation. A client estimated at ~1.6M gas used ~11.5M, so the
+broadcast ran out of gas, even with `--gas-estimate-multiplier 200`. Forge
+still printed the would-be address. Ask the node and set the limit explicitly:
+
+```bash
+cast estimate --from "$(cast wallet address --private-key "$PRIVATE_KEY")" \
+  --rpc-url "$RPC_URL" \
+  --create "$(jq -r .bytecode.object out/<Client>.sol/<Client>.json)" \
+  "constructor(address,address)" "$TASK_MANAGER" "$POLICY_CLIENT_OWNER"
+forge create src/<Client>.sol:<Client> --broadcast --gas-limit <estimate + ~15%> \
+  --constructor-args "$TASK_MANAGER" "$POLICY_CLIENT_OWNER" \
+  --rpc-url "$RPC_URL" --private-key "$PRIVATE_KEY"
+```
+
+Never trust a printed address alone. Before `setPolicies`, confirm the
+receipt succeeded and code exists:
+
+```bash
+cast receipt <deployTx> status --rpc-url "$RPC_URL"   # 1 (success)
+cast code 0xCLIENT --rpc-url "$RPC_URL"               # not 0x
+```
+
+Record `cast receipt <deployTx> blockNumber`; it is where a history scan
+starts ([reading-results.md](reading-results.md)).
+
 Then the **current** owner (still the local key) replaces the client's
 policy set with one `cast` call. Do not use `newton-cli policy-client`.
 Do not call `setPolicyAddress` or `setPolicy`.

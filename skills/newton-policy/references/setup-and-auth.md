@@ -29,10 +29,24 @@ export PATH="$HOME/.newton/bin:$PATH"
 Useful alternatives:
 
 ```bash
-newtup --list
 newtup -v <version>
 newtup -v nightly
 ```
+
+`newtup` does not update itself or the CLI. Compare the installed version
+with the latest release, and rerun `newtup` when it is behind:
+
+```bash
+newton-cli --version
+curl -fsSL https://cli.newton.xyz/version   # latest release tag
+```
+
+`newtup --list` returns HTTP 404 outside the Newton GitHub org: it reads the
+releases API of an internal repo without auth. Use the `version` URL above.
+
+Policy deploys need CLI 0.7 or newer. A 0.5.x CLI deploys a pre-0.7 Policy
+(plus a PolicyData contract) that the TaskManager rejects:
+`version()` is below `minCompatiblePolicyVersion()`.
 
 macOS/Linux have prebuilt binaries. Use WSL on Windows. Prefer `newtup`
 over a source build unless the user already has CLI source and asks for it.
@@ -67,6 +81,16 @@ that `jco` is on `PATH`.
 If the user's interactive shell will run builds later, tell them they can
 persist the npm-global `bin` on `PATH` in their shell profile. Do not edit
 their rc files without asking.
+
+### `--help` prints secret values
+
+Do not run `newton-cli <command> --help` while `PRIVATE_KEY`, `RPC_URL`, or
+other secrets are set in the process environment or `~/.newton/.env` (the CLI
+loads that file itself). Args declared with `env = ...` show their current
+value in help output, so the key and any credential-bearing RPC URL land in
+the terminal and the transcript. Read flags from this skill or the CLI README
+instead, or run help in a shell where those variables are unset and
+`~/.newton/.env` is absent.
 
 ## Decide whether login is needed
 

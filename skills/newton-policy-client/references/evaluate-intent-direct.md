@@ -184,6 +184,18 @@ The admitted task freezes the client's ordered policy set. `wasmArgs` is one
 slot per policy, in that same order. A pure-Rego policy still takes an empty
 slot. Do not merge oracle JSON across policies.
 
+On the wire, `wasm_args` is an **array of hex strings** (the gateway type is
+`Vec<String>`). Each entry is the hex-encoded UTF-8 of the string that
+policy's `run(wasm_args)` receives, usually a JSON document. This one is
+`{"chainId":"11155111"}`:
+
+```json
+"wasm_args": ["0x7b22636861696e4964223a223131313535313131227d"]
+```
+
+`wasm_args` is caller-controlled and lands in public task data. Use it to
+select or anchor what the oracle fetches, never for secrets or authorization.
+
 Do not echo the Authorization header or the signed JSON if it contains
 secrets in `wasm_args`.
 
@@ -210,6 +222,29 @@ unchanged.
 
 `allowed: true` is not on-chain execution. The user still submits
 `task`, `taskResponse`, and `signatureData` to the PolicyClient.
+
+### Oracle output and Rego in the response
+
+`task_response.policy_task_data[i]` (one per policy, in set order) holds what
+operators signed for that policy:
+
+| Field | Contents |
+|---|---|
+| `policyAddress` | The Policy that evaluated |
+| `policyData[0].data` | Hex of the JSON the policy's `run()` returned |
+| `policyData[0].wasmArgs` | Hex of that policy's `wasm_args` entry |
+| `policy` | Hex of the Rego source operators evaluated |
+
+Decode `data` to show users the measured values behind a verdict. A denied
+task (`allowed: false`) is still a signed, completed evaluation.
+
+A failed `status` whose error contains `failed to instantiate wasm component`
+and an import such as `newton:provider/tlsn@0.2.0` means the policy WASM was
+built against an outdated WIT. Fix it in `newton-policy` (policy-loop.md,
+Build) and deploy a new Policy.
+
+To list past verdicts for a client without an indexer, read the TaskManager's
+logs: [reading-results.md](reading-results.md).
 
 ## Do not
 

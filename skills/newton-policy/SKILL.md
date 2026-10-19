@@ -148,6 +148,9 @@ then rerun `newton-cli login`.
   credential into chat.
 - Never run `newton-cli auth token` for routine verification: it prints the JWT
   into terminal/transcript output.
+- Never run `newton-cli … --help` with secrets in the environment or
+  `~/.newton/.env`: help output prints env-backed values (see
+  [setup-and-auth.md](references/setup-and-auth.md)).
 - Never put credentials in source files, committed files, or a project-local
   `.env`.
 - Treat the scaffolded `.env.example` only as a variable checklist. Inject
@@ -198,6 +201,11 @@ Rules:
   `fetch-event`. Use Newton WIT imports, not those globals.
 - Stay local until build/simulate behavior matches the user's goal.
 - Do not deploy unless the user explicitly requests or confirms deployment.
+- On a testnet with CLI 0.7.4 or older, deploy with `DEPLOYMENT_ENV=prod`
+  and confirm `isPolicy` on the TaskManager's factory before binding
+  ([deploy-and-secrets.md](references/deploy-and-secrets.md)).
+- After each build, confirm the WASM imports only `newton:provider/http`
+  and `newton:provider/secrets` ([policy-loop.md](references/policy-loop.md)).
 
 ## Completion report
 
