@@ -15,6 +15,12 @@ import {DirectERC20TransferPolicyClient} from "../src/DirectERC20TransferPolicyC
 ///
 ///   forge script script/DeployPolicyClient.s.sol:DeployPolicyClient \
 ///     --rpc-url "$RPC_URL" --private-key "$PRIVATE_KEY" --broadcast
+///
+///      Gas: forge's simulation can underestimate contract creation badly on
+///      Sepolia, and the broadcast then runs out of gas while forge still prints
+///      the address. Take `cast estimate --create` and use `forge create
+///      --gas-limit`, then check `cast receipt <tx> status` and `cast code`
+///      (references/deployment-and-wiring.md).
 contract DeployPolicyClient is Script {
     function run() external {
         address token = vm.envAddress("TOKEN");

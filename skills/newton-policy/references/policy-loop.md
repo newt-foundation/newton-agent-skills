@@ -115,6 +115,20 @@ object keyed by pack id so simulate matches live namespacing, for example
 changing `configs/wasm_args.json` (or params / intent), not by pasting live
 oracle payloads from chat. Do not deploy that stub as PolicyData.
 
+#### Oracle output is public
+
+Whatever `run()` returns is part of the attested task data. The gateway
+broadcasts tasks to the TaskManager, and the `TaskResponded` event carries
+each policy's oracle output (and its Rego) on-chain. Return only what the
+Rego needs, already reduced: totals, timestamps, counts, booleans. Do not
+pass through raw API responses, account-wide aggregates, positions, or
+records. If a rule only needs to know that two values differ, return the
+boolean, not the second value.
+
+Operators each run the WASM and fetch on their own. When a source changes
+per request, have the caller pass a stable anchor (for example a snapshot
+time) in `wasm_args` so every operator fetches the same data.
+
 ### `policy.rego`
 
 ```rego
@@ -191,6 +205,22 @@ Common failures:
 
 Never hand-edit `dist/policy.wasm`; edit source and rebuild.
 
+Check the component's host imports after every build:
+
+```bash
+strings <policy-dir>/dist/policy.wasm | grep -oE 'newton:provider/[a-z]+@[0-9.]+' | sort -u
+```
+
+Live operators link only `newton:provider/http` and `newton:provider/secrets`.
+A `newton-provider.wit` scaffolded by an older CLI can also import
+`newton:provider/tlsn@0.2.0` (0.5.2's scaffold does; 0.7.2 and later do not).
+The compiled component keeps that import even when `policy.js` never uses it.
+Local simulate still passes, but live tasks fail with `failed to instantiate
+wasm component: component imports instance newton:provider/tlsn@0.2.0`.
+Replace the WIT with the current scaffold's (scaffold a throwaway policy with
+CLI 0.7.2+ and copy its `newton-provider.wit`), rebuild, and deploy a new
+Policy: the `wasmCid` cannot change in place.
+
 ## Simulate
 
 Preferred:
@@ -239,6 +269,11 @@ For a policy set (for example `vaultsfyi` and `chainalysis` on Base Sepolia,
 chain `84532`), run allow and deny in **each** policy directory, then write
 one `dist/policy-handoff.json` per policy. Lookup needs no `RPC_URL`. Leave
 `policyData` empty.
+
+The WASM HTTP host refuses private and loopback addresses (`localhost`,
+`127.0.0.1`, RFC 1918), the same guard live operators run. A mock data source
+for simulate or a live task must be served from a public URL, such as a
+preview deployment.
 
 For WASM-only debugging:
 

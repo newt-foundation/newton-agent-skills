@@ -18,6 +18,12 @@ if [[ -z "${RPC_URL:-}" || -z "${POLICY_CLIENT:-}" ]]; then
   exit 1
 fi
 
+code="$(cast code "$POLICY_CLIENT" --rpc-url "$RPC_URL")"
+if [[ "$code" == "0x" ]]; then
+  echo "no contract code at $POLICY_CLIENT; the deploy failed or is on another chain" >&2
+  exit 1
+fi
+
 snapshot="$(cast call "$POLICY_CLIENT" \
   "getPolicySetSnapshot()(bytes32,uint64,(address,(bytes,uint32))[])" \
   --rpc-url "$RPC_URL")"

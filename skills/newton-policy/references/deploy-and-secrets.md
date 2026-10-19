@@ -121,6 +121,29 @@ reads `<policy-dir>/configs/deployment.toml`. Record:
 A client set is several of these deploys. Keep the evaluation order. The
 cap is 8. `newton-policy-client` sends them in one `setPolicies` call.
 
+### Testnet: deploy through the prod factory
+
+Through CLI 0.7.4, `policy deploy` resolves the policy factory from
+`DEPLOYMENT_ENV` and defaults to **stagef**, while the gateway and
+`deployments show` default to prod. On Ethereum Sepolia the Policy then lands
+on the stagef factory, `isPolicy` is false on the TaskManager's factory, and
+`setPolicies` reverts with `PolicyNotRegistered`. Fixed in
+newton-prover-avs#834; until the installed CLI includes it, deploy with:
+
+```bash
+DEPLOYMENT_ENV=prod newton-cli policy deploy -p <policy-dir>
+```
+
+Verify every new Policy before binding it:
+
+```bash
+TM=<newtonProverTaskManager from `deployments show`>
+FACTORY=$(cast call "$TM" "policyFactory()(address)" --rpc-url "$RPC_URL")
+cast call "$FACTORY" "isPolicy(address)(bool)" 0xPOLICY --rpc-url "$RPC_URL"   # true
+cast call 0xPOLICY "version()(string)" --rpc-url "$RPC_URL"                     # >= below
+cast call "$TM" "minCompatiblePolicyVersion()(string)" --rpc-url "$RPC_URL"
+```
+
 ### Published pack
 
 Resolve the policy address with `newton-cli policy packs show --format json`

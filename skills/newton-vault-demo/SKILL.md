@@ -71,10 +71,11 @@ Names only. Never ask for values, never print them.
 On the first turn also check:
 
 ```bash
-newton-cli policy packs --help
+newton-cli policy packs list --format json
 ```
 
-If the subcommand is missing, stop. The agent needs a `newton-cli` that
+Do not use `--help` for this check: it prints env-backed values such as
+`PRIVATE_KEY` and `RPC_URL`. If the subcommand is missing, stop. The agent needs a `newton-cli` that
 ships `policy packs` (0.5.4+). Do not scaffold a fresh HTTP oracle as a
 workaround.
 

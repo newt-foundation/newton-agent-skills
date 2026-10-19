@@ -109,6 +109,8 @@ When needed:
   [references/deployment-and-wiring.md](references/deployment-and-wiring.md)
 - Live evaluate (sign intent, POST gateway):
   [references/evaluate-intent-direct.md](references/evaluate-intent-direct.md)
+- Past verdicts for a client, read from TaskManager logs (dashboards):
+  [references/reading-results.md](references/reading-results.md)
 - Policy / client JSON handoff:
   [references/handoff.md](references/handoff.md)
 
