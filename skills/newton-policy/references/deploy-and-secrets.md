@@ -243,10 +243,11 @@ identity to `getOwner()`. If owner is still the local key, stop and finish
 `setPolicyClientOwner(loginWallet)` in `newton-policy-client` first.
 
 Secrets are encrypted client-side and scoped to `(policy client, policy)`.
-The installed CLI still names the policy argument `--policy-data-address`.
-Pass the **NewtonPolicy** address (the contract that holds `wasmCid`), not a
-pre-0.7 PolicyData contract. Run the command once per policy in the set
-whose WASM calls `getSecrets()`.
+CLI 0.7.5 names the policy argument `--policy-address` (earlier CLIs used
+`--policy-data-address`; check `newton-cli --version`). Pass the
+**NewtonPolicy** address (the contract that holds `wasmCid`), not a pre-0.7
+PolicyData contract. Run the command once per policy in the set whose WASM
+calls `getSecrets()`.
 
 Create `secrets.json` outside tracked source or ensure it is ignored. Then:
 
@@ -254,7 +255,7 @@ Create `secrets.json` outside tracked source or ensure it is ignored. Then:
 newton-cli --chain-id $CHAIN_ID secrets upload \
   --secrets-file secrets.json \
   --policy-client 0xPOLICY_CLIENT \
-  --policy-data-address 0xPOLICY \
+  --policy-address 0xPOLICY \
   --api-key $API_KEY
 ```
 

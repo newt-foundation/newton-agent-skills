@@ -139,6 +139,37 @@ forge create src/<Client>.sol:<Client> --broadcast --gas-limit <estimate + ~15%>
   --rpc-url "$RPC_URL" --private-key "$PRIVATE_KEY"
 ```
 
+Sepolia caps a transaction at 16,777,216 gas (2^24). A ~9 KB client
+estimated 14.54M and used 14.43M, so estimate + 15% can exceed the cap: clamp
+the limit to ~16M. A client that would need more must shrink.
+
+The cause is code size. As of Nov 2026 Sepolia charges about 1,600 gas per
+byte of deployed runtime code (mainnet charges 200), and forge's local
+simulation still prices it at 200. Measured with `cast estimate --create`:
+
+| Runtime code | Sepolia estimate |
+|---|---|
+| 1.9 KB | 3.2M |
+| 5.5 KB | 8.7M |
+| 9.2 KB | 14.7M |
+| 14.8 KB | 23.2M (cannot deploy) |
+
+So about 10 KB is the most one Sepolia transaction can deploy. A
+`--gas-estimate-multiplier` on `forge script` doesn't help: forge multiplies
+its own low estimate, and a large enough multiplier pushes small transactions
+over the cap instead. Deploy each large contract with `forge create
+--gas-limit` (or `cast send --create <bytecode>`) and the node's estimate,
+and use `forge script` only for small transactions such as proxies and calls,
+after checking its dry run's largest `gas` stays under the cap.
+
+A third-party contract over ~10 KB (for example an ERC-3643 / T-REX token,
+14.8 KB) cannot be deployed whole. Check whether its maintainer already
+deployed implementations on Sepolia, and deploy only proxies over them. For
+T-REX, Tokeny's `TREXFactory` 0x7F1fD450a5c4d91286f00F3297dCD5C12767f17f
+exposes `getImplementationAuthority()`, which serves T-REX 4.1.3; each
+`*Proxy` contract initialises through `delegatecall` in its constructor, so
+the deployer becomes owner.
+
 Never trust a printed address alone. Before `setPolicies`, confirm the
 receipt succeeded and code exists:
 
@@ -181,6 +212,12 @@ matching `getPolicyId()`.
 Finish **all** owner-only client writes (`setPolicies` and optional
 register below) before transferring ownership. After transfer, the local
 key can no longer call them. The new owner can.
+
+Before you transfer, run every allow and deny case through `newton-cli policy
+simulate` against the policy you just bound. After the transfer, only the login
+wallet can rebind. A Rego fix found later needs either a signature from that
+wallet (often a browser wallet the agent can't use) or a new client. If other
+contracts hold the client's address immutably, they need redeploying too.
 
 ## Register
 

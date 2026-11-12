@@ -223,6 +223,14 @@ unchanged.
 `allowed: true` is not on-chain execution. The user still submits
 `task`, `taskResponse`, and `signatureData` to the PolicyClient.
 
+Submitting right after the gateway answers can revert with
+`TaskCreatedBlockInFuture()` (selector `0x499118a5`). The gateway stamps
+`task.taskCreatedBlock` from its own node, and that node can be a block or two
+ahead of the RPC the submission is estimated and sent through. Before
+submitting, poll that RPC (`getBlockNumber({ cacheTime: 0 })` in viem) until
+it is past `taskCreatedBlock`. That usually takes a few seconds. The
+attestation is still valid for the policy's `expireAfter` blocks.
+
 ### Oracle output and Rego in the response
 
 `task_response.policy_task_data[i]` (one per policy, in set order) holds what
@@ -242,6 +250,16 @@ A failed `status` whose error contains `failed to instantiate wasm component`
 and an import such as `newton:provider/tlsn@0.2.0` means the policy WASM was
 built against an outdated WIT. Fix it in `newton-policy` (policy-loop.md,
 Build) and deploy a new Policy.
+
+A failed `status` with `per-task attestation failed: Enclave error: remote:
+NSM attestation not yet implemented` comes from a Policy in the set whose
+Rego text contains `identity` (`newton-policy`, policy-loop.md, `policy.rego`).
+Rename it, deploy a new Policy, and bind the new set. Other policies in the
+set are unaffected.
+
+Right after `setPolicyClientOwner`, the gateway can still read the old owner
+and answer `AuthorizationFailed: policy client … is owned by <deployer>`.
+Wait a few blocks and retry.
 
 To list past verdicts for a client without an indexer, read the TaskManager's
 logs: [reading-results.md](reading-results.md).
