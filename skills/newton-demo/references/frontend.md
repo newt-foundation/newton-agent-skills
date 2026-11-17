@@ -27,7 +27,6 @@ Map from `client-handoff.json` (and the policy handoff it points at):
 | `protectedFunction.name` | Solidity entrypoint name |
 | `protectedFunction.userArgs` | Application args before `Task` |
 | `intent.*` | Same named `functionSignature` / `dataEncoding` as the handoffs |
-| `eip712` | `"NewtonPolicyClient"` / `"1"` unless the client has an EIP-712 mixin |
 | `wasmArgs` | Optional JSON object for the oracle; `null` if unused |
 
 Never put keys, RPC URLs, or secrets JSON in this file.
@@ -61,9 +60,11 @@ real `SIGNER_PRIVATE_KEY`. HTTP `newt_createTask` in
 
 ## Signing and evaluate
 
-1. Prefer `eip712Domain()` on the PolicyClient. If it reverts (the golden
-   wrapper has no EIP-712 mixin), use `demo-config.eip712` with
-   `verifyingContract` = PolicyClient.
+1. Build the gateway's fixed domain with `intentDomain()` in
+   `lib/eip712.ts`: `"NewtonPolicyClient"`, `"1"`, the demo `chainId`, and
+   `verifyingContract` = PolicyClient. Do not read the client's
+   `eip712Domain()` or make the name configurable; the gateway rejects any
+   other domain.
 2. Sign typed data `Intent` in the browser (`value` and `chainId` are
    `BigInt`; `functionSignature` is hex UTF-8 of the **named** ABI string).
 3. POST `{ policyClient, intent, intentSignature, wasmArgs? }` to

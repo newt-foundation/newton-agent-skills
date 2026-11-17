@@ -1,6 +1,4 @@
-import type { Address, Hex, PublicClient } from "viem";
-import { eip712DomainAbi } from "./abi";
-import { demoConfig } from "./config";
+import type { Address, Hex } from "viem";
 
 export const INTENT_TYPES = {
   Intent: [
@@ -13,6 +11,14 @@ export const INTENT_TYPES = {
   ],
 } as const;
 
+/**
+ * The gateway verifies every intent signature under this fixed domain:
+ * name "NewtonPolicyClient", version "1", the intent's chain, and the
+ * PolicyClient address. It ignores the client's own `eip712Domain()`.
+ */
+export const INTENT_DOMAIN_NAME = "NewtonPolicyClient";
+export const INTENT_DOMAIN_VERSION = "1";
+
 export type IntentDomain = {
   name: string;
   version: string;
@@ -20,37 +26,13 @@ export type IntentDomain = {
   verifyingContract: Address;
 };
 
-export async function resolveIntentDomain(
-  publicClient: PublicClient,
-  policyClient: Address,
-  chainId: number,
-): Promise<{ domain: IntentDomain; source: "eip712Domain" | "fallback" }> {
-  try {
-    const result = await publicClient.readContract({
-      address: policyClient,
-      abi: eip712DomainAbi,
-      functionName: "eip712Domain",
-    });
-    return {
-      domain: {
-        name: result[1],
-        version: result[2],
-        chainId: Number(result[3]),
-        verifyingContract: result[4],
-      },
-      source: "eip712Domain",
-    };
-  } catch {
-    return {
-      domain: {
-        name: demoConfig.eip712.name,
-        version: demoConfig.eip712.version,
-        chainId,
-        verifyingContract: policyClient,
-      },
-      source: "fallback",
-    };
-  }
+export function intentDomain(policyClient: Address, chainId: number): IntentDomain {
+  return {
+    name: INTENT_DOMAIN_NAME,
+    version: INTENT_DOMAIN_VERSION,
+    chainId,
+    verifyingContract: policyClient,
+  };
 }
 
 export function intentTypedMessage(input: {

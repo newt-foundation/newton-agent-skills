@@ -118,7 +118,7 @@ Follow [references/orchestration.md](references/orchestration.md).
 - Policy facts come from `<policy-dir>/dist/policy-handoff.json`.
 - Client facts come from the Foundry root `client-handoff.json`.
 - Extend that client handoff with frontend fields (`userArgs`, `target`,
-  `needsTokenApproval`, `eip712`).
+  `needsTokenApproval`).
 - Foundry tests must pass before any live application tx.
 
 ## Frontend

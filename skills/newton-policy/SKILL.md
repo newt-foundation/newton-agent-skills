@@ -40,16 +40,16 @@ not ask for values yet):
 
 - A funded local `PRIVATE_KEY` in the process environment or `~/.newton/.env`
   (CLI / Foundry deploys; not the dashboard login wallet)
-- A Newton gateway API key from `newton-cli keys` (secrets upload and live
-  evaluate; not required for local simulate)
+- A Newton gateway API key with `RpcWrite` from `newton-cli keys` (`API_KEY`),
+  or a `newton-cli login` session the CLI hydrates one from. Needed for
+  `policy deploy` uploads, secrets upload, and live evaluate; not for local
+  simulate
 - Target chain/environment
 - RPC endpoint. On Ethereum Sepolia (`11155111`), this skill uses
   `https://ethereum-sepolia-rpc.publicnode.com` unless `RPC_URL` is already
   set. Do not ask the user for a Sepolia URL. On other chains (including
   Base Sepolia `84532`), live deploy needs an injected `RPC_URL` — do not
   invent a public URL. Pack lookup (`policy packs`) needs no RPC.
-- IPFS upload route: Newton proxy, or direct Pinata using both `PINATA_JWT`
-  and `PINATA_GATEWAY`
 
 Published-pack lookup (`newton-cli policy packs`) is config-free: no
 `PRIVATE_KEY`, login, or RPC.
@@ -161,8 +161,8 @@ then rerun `newton-cli login`.
   binary, another repo checkout, or shell rc files. A custom `newton-cli`
   path does not change where secrets are loaded from.
 - For live deployment, at the deploy checkpoint ask the user to inject missing
-  `PRIVATE_KEY` and `PINATA_JWT` into the process environment or
-  `~/.newton/.env`. On Sepolia, use the public RPC above if `RPC_URL` is
+  `PRIVATE_KEY` (and `API_KEY` when there is no login session) into the
+  process environment or `~/.newton/.env`. On Sepolia, use the public RPC above if `RPC_URL` is
   unset; on other chains, ask them to inject `RPC_URL` the same way. Verify
   only whether required variables are set; never print their values.
 - For headless/CI login, the user must provide `NEWTON_ACCESS_TOKEN` through the
@@ -201,8 +201,9 @@ Rules:
   `fetch-event`. Use Newton WIT imports, not those globals.
 - Stay local until build/simulate behavior matches the user's goal.
 - Do not deploy unless the user explicitly requests or confirms deployment.
-- On a testnet with CLI 0.7.4 or older, deploy with `DEPLOYMENT_ENV=prod`
-  and confirm `isPolicy` on the TaskManager's factory before binding
+- With CLI 0.7.5 or older (any chain), upgrade with `newtup` or deploy with
+  `DEPLOYMENT_ENV=prod`, and confirm `isPolicy` on the TaskManager's factory
+  before binding
   ([deploy-and-secrets.md](references/deploy-and-secrets.md)).
 - After each build, confirm the WASM imports only `newton:provider/http`
   and `newton:provider/secrets` ([policy-loop.md](references/policy-loop.md)).

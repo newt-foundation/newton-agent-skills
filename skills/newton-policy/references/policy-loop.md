@@ -105,7 +105,25 @@ import { get as getSecrets } from "newton:provider/secrets@0.2.0";
 
 `getSecrets()` returns one JSON document as bytes, not a per-key API. Parse
 once, then read fields. Leave imports unused/commented when the policy does not
-need them.
+need them. In CLI 0.7.5 simulate the call returns `{ value }` (bytes) rather
+than a `{ tag, val }` result; accept both.
+
+`policy.js` must be one ES module. To use npm code (for example
+`@noble/ciphers`), bundle it with esbuild (`format: "esm"`,
+`platform: "neutral"`, `external: ["newton:provider/*"]`) and build the
+bundle. Two limits apply to what runs inside it:
+
+- Nothing may call random while modules load. The build snapshots module
+  initialization and refuses `wasi:random` there (`attempted to call an
+  unknown imported function: 'wasi:random/random…' 'get-random-bytes'`).
+  `@noble/curves/ed25519.js` does this (it probes `randomBytes` building the
+  curve); `@noble/ciphers` and `@noble/hashes` don't.
+- The runtime has an execution budget. Heavy BigInt work traps with a bare
+  `wasm execution failed` that `try`/`catch` can't see: about 1,000
+  256-bit multiply-mod steps run, 5,000 don't. That rules out public-key
+  operations such as an X25519 exchange inside the oracle. For private
+  per-request data, encrypt it symmetrically (XChaCha20-Poly1305 under a key
+  uploaded as a policy secret) instead.
 
 Keep returned fields stable because Rego reads them through `data.wasm`.
 
@@ -127,9 +145,53 @@ boolean, not the second value.
 
 Operators each run the WASM and fetch on their own. When a source changes
 per request, have the caller pass a stable anchor (for example a snapshot
-time) in `wasm_args` so every operator fetches the same data.
+time) in `wasm_args` so every operator fetches the same data. For an
+on-chain read, anchor a block number. viem caches `getBlockNumber()` for its
+polling interval (about 4 s), so read the head with `{ cacheTime: 0 }` right
+after a transaction, or the anchor predates it.
+
+#### Reading contract state from the oracle
+
+An oracle can read a contract, for example a registry of what a policy already
+allowed, with a JSON-RPC POST through `newton:provider/http`. Send one batched
+request at the anchored block: `eth_call` for the value, plus
+`eth_getBlockByNumber(block, false)` for that block's timestamp.
+
+```javascript
+const body = JSON.stringify([
+  { jsonrpc: "2.0", id: 1, method: "eth_getBlockByNumber", params: [block, false] },
+  { jsonrpc: "2.0", id: 2, method: "eth_call", params: [{ to: registry, data: SELECTOR + key.slice(2) }, block] },
+]);
+const r = httpFetch({ url: rpcUrl, method: "POST", headers: [["content-type", "application/json"]], body: new TextEncoder().encode(body) });
+```
+
+Everything the read depends on comes from `wasm_args`, which the caller
+controls. So return those inputs with the result (`key`, `registry`, `rpc`,
+`block_time`) and have the Rego reject a read that isn't this request's:
+
+- the key matches the intent argument;
+- the registry equals a param;
+- the RPC is in an allow-listed `rpc_urls` param;
+- `time.now_ns()` minus `block_time` is within a `max_block_age_seconds` param.
+
+A failed read should fail the rule closed. If the read guards against reuse
+(a duplicate check), the contract that records the use should also refuse it.
+Two requests can pass the oracle before either is recorded.
+
+Tested public RPCs (Nov 2026): `https://sepolia.gateway.tenderly.co` keeps
+full log history, takes batches and ranges of 200k+ blocks, and rate-limits
+bursts of about 30 parallel calls. `ethereum-sepolia-rpc.publicnode.com`
+prunes older logs. dRPC's free plan no longer serves Sepolia.
 
 ### `policy.rego`
+
+Keep the substring `identity` out of the Rego text: package name, rule
+names, string literals and comments. On the Sepolia testnet gateway (Oct
+2026) any Policy whose Rego contains it is routed to an enclave evaluation
+path that isn't implemented, and every task fails with `per-task attestation
+failed: Enclave error: remote: NSM attestation not yet implemented`. Policy
+metadata, the params schema and `wasm_args` don't trigger it. Use another
+word (for example `parties` for a KYB / role group).
 
 ```rego
 package my_policy
@@ -264,6 +326,11 @@ Run at least:
 
 1. Expected allow case → ALLOWED
 2. Expected deny case → DENIED
+
+When scripting simulate, capture stderr as well: the CLI writes its logs and
+the `Evaluation result:` line there, so a script that reads only stdout sees
+nothing and can mistake every case for a pass. Use a non-`allow` entrypoint
+(for example a `violations` set) to list every failed rule.
 
 For a policy set (for example `vaultsfyi` and `chainalysis` on Base Sepolia,
 chain `84532`), run allow and deny in **each** policy directory, then write

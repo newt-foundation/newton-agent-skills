@@ -5,13 +5,12 @@ import { maxUint256, stringToHex, type Address, type Hex } from "viem";
 import {
   useAccount,
   useConnect,
-  usePublicClient,
   useSignTypedData,
   useWriteContract,
 } from "wagmi";
 import { buildProtectedAbi, erc20ApproveAbi } from "@/lib/abi";
 import { demoConfig, isAddress } from "@/lib/config";
-import { INTENT_TYPES, intentTypedMessage, resolveIntentDomain } from "@/lib/eip712";
+import { INTENT_TYPES, intentDomain, intentTypedMessage } from "@/lib/eip712";
 import { encodeIntentData, functionSignatureHex, parseUserArg } from "@/lib/intent";
 
 type Status = { kind: "idle" | "info" | "ok" | "error"; text: string };
@@ -19,7 +18,6 @@ type Status = { kind: "idle" | "info" | "ok" | "error"; text: string };
 export default function Page() {
   const { address, isConnected } = useAccount();
   const { connect, connectors, isPending: connecting } = useConnect();
-  const publicClient = usePublicClient();
   const { signTypedDataAsync } = useSignTypedData();
   const { writeContractAsync, isPending: writing } = useWriteContract();
 
@@ -51,7 +49,7 @@ export default function Page() {
   async function onSubmit(event: React.FormEvent) {
     event.preventDefault();
     try {
-      if (!address || !publicClient) {
+      if (!address) {
         throw new Error("Connect a wallet first.");
       }
       if (!isAddress(policyClient)) {
@@ -69,15 +67,10 @@ export default function Page() {
       const value = BigInt(demoConfig.intent.value);
       const chainId = BigInt(demoConfig.chainId);
 
-      const { domain, source } = await resolveIntentDomain(
-        publicClient,
-        policyClient,
-        demoConfig.chainId,
-      );
-      setStatus({ kind: "info", text: `Signing intent (${source} domain)…` });
+      setStatus({ kind: "info", text: "Signing intent…" });
 
       const intentSignature = await signTypedDataAsync({
-        domain,
+        domain: intentDomain(policyClient, demoConfig.chainId),
         types: INTENT_TYPES,
         primaryType: "Intent",
         message: intentTypedMessage({

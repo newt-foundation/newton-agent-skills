@@ -12,10 +12,6 @@
   ],
   "target": null,
   "needsTokenApproval": true,
-  "eip712": {
-    "name": "NewtonPolicyClient",
-    "version": "1"
-  },
   "intent": {
     "to": "token",
     "value": "0",

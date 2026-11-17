@@ -22,10 +22,6 @@ export type DemoConfig = {
     functionSignature: string;
     dataEncoding: string;
   };
-  eip712: {
-    name: string;
-    version: string;
-  };
   wasmArgs: Record<string, unknown> | null;
 };
 
