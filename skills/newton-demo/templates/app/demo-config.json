@@ -17,9 +17,5 @@
     "functionSignature": "function transfer(address recipient, uint256 amount)",
     "dataEncoding": "transfer(address,uint256)"
   },
-  "eip712": {
-    "name": "NewtonPolicyClient",
-    "version": "1"
-  },
   "wasmArgs": null
 }

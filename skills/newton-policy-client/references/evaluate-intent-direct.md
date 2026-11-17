@@ -84,33 +84,36 @@ is the raw ABI-description bytes (hex in viem). `intent.from` is the signer.
 
 ### Domain
 
-1. Prefer EIP-5267 on the PolicyClient. Read `eip712Domain()` and use
-   `name`, `version`, `Number(chainId)`, `verifyingContract`:
-
-```text
-eip712Domain() returns
-  (bytes1 fields, string name, string version, uint256 chainId,
-   address verifyingContract, bytes32 salt, uint256[] extensions)
-```
-
-2. If that call reverts (this skill's template has no EIP-712 mixin), use a
-   fallback domain that you record and keep stable:
+The gateway verifies every `intent_signature` under one fixed domain. Sign
+with exactly this:
 
 | Field | Value |
 |---|---|
-| `name` / `version` | Match the client's `EIP712(name, version)` constructor if it has one; otherwise a documented pair such as `"NewtonPolicyClient"` / `"1"` |
+| `name` | `"NewtonPolicyClient"` |
+| `version` | `"1"` |
 | `chainId` | Intent chain id |
 | `verifyingContract` | The PolicyClient address |
 
-Do not invent a verifying contract. If you later add OpenZeppelin `EIP712` to
-the client, those constructor strings must match the domain you sign with.
+Do not read the client's `eip712Domain()` (EIP-5267) and sign with that. The
+gateway ignores it, so a client whose own `EIP712(name, version)` differs
+(for example a hook or app that names its domain after itself) gets
+`intent_signature does not verify` from the gateway. If such a client also
+checks the signature on-chain, its constructor must use `"NewtonPolicyClient"`
+/ `"1"` too, or the two checks can never both pass.
+
+Do not invent a verifying contract.
 
 viem shape (same as the SDK docs):
 
 ```js
 const intentSignature = await walletClient.signTypedData({
   account,
-  domain, // from eip712Domain() or the fallback above
+  domain: {
+    name: "NewtonPolicyClient",
+    version: "1",
+    chainId: Number(intent.chainId),
+    verifyingContract: policyClient,
+  },
   types: {
     Intent: [
       { name: "from", type: "address" },

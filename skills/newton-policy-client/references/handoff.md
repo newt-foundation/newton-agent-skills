@@ -38,7 +38,6 @@ Never put private keys, RPC URLs, JWTs, or secrets JSON in this file.
 | `userArgs` | yes for UI | Application args before `Task` / `TaskResponse` / `signatureData` |
 | `target` | when known | Concrete `intent.to` address (token or other); else `null` |
 | `needsTokenApproval` | yes for UI | `true` when the connected wallet must `approve` the client |
-| `eip712` | yes for UI | Fallback domain `name` / `version` if `eip712Domain()` reverts |
 | `intent` | yes | Same encoding as the policy handoff |
 | `policy` | after wiring | First policy address, else `null`. A set uses `policies` |
 | `policies` | after wiring | Ordered `{ policy, handoff, expireAfterBlocks }`, length 1–8 |
@@ -57,6 +56,6 @@ consumes the policy handoff and writes `shield-handoff.json`. Do not write
 a fake client-handoff to satisfy a Morpho brief.
 
 `newton-demo` copies `chainId`, `policyClient`, `userArgs`, `target`,
-`needsTokenApproval`, `eip712`, and `intent` into `demo-config.json`. Keep
+`needsTokenApproval`, and `intent` into `demo-config.json`. Keep
 `functionSignature` in the named UTF-8 form. Never put keys or RPC URLs in
 this file.

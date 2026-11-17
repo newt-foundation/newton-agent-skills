@@ -261,8 +261,10 @@ When the user asks for a gateway round-trip, do **not** call
 
 1. Form the six-field intent (`from`, `to`, `value`, `data`, `chainId`,
    `functionSignature`). Addresses are `0x` hex strings.
-2. Sign it EIP-712 as type `Intent`. Prefer `eip712Domain()` on the client;
-   otherwise a fallback domain whose `verifyingContract` is the PolicyClient.
+2. Sign it EIP-712 as type `Intent` under the gateway's fixed domain:
+   `name` `"NewtonPolicyClient"`, `version` `"1"`, the intent's `chainId`,
+   and `verifyingContract` = the PolicyClient. Do not read the client's
+   `eip712Domain()`; the gateway ignores it.
    `value` and `chainId` in the message are `BigInt`. The signature must be
    65 bytes; `"0x"` is not valid.
 3. POST JSON-RPC `newt_createTask` to the gateway for that chain:
@@ -292,8 +294,7 @@ until the policy skill fills them.
 
 Write `client-handoff.json` at the Foundry project root after tests, and
 again after live wiring (ordered `policies`, `policyId`, `policyRevision`,
-`ownerIsLoginWallet`, registry, plus `userArgs` / `target` / `eip712` for a
-UI). Secrets upload in `newton-policy` needs `policyClient`, each Policy
+`ownerIsLoginWallet`, registry, plus `userArgs` / `target` for a UI). Secrets upload in `newton-policy` needs `policyClient`, each Policy
 address whose WASM calls `getSecrets()`, and `ownerIsLoginWallet: true`.
 If the user wants a frontend, hand off to `newton-demo` with that file.
 
