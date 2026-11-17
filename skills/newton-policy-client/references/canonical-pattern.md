@@ -112,15 +112,15 @@ than 8 reverts `TooManyPolicies`. An empty array reverts `EmptyPolicySet`.
 An address the TaskManager factory does not return from `isPolicy` reverts
 `PolicyNotRegistered`.
 
-`cast` equivalent after deploy (do not use `newton-cli policy-client`):
+After deploy, bind from the CLI with a `policies.json` of
+`[{ "policy": "0xPOLICY", "params": { ... }, "expire_after": <blocks> }]`:
 
 ```bash
-PARAMS=$(cast from-utf8 "$(cat params.json)")
-cast send 0xCLIENT \
-  'setPolicies((address,(bytes,uint32))[])' \
-  "[(0xPOLICY,($PARAMS,<blocks>))]" \
-  --rpc-url "$RPC_URL" --private-key "$PRIVATE_KEY"
+newton-cli policy-client set-policies --client 0xCLIENT --policies policies.json
 ```
+
+Details and the `cast` fallback for CLIs before 0.7.6:
+[deployment-and-wiring.md](deployment-and-wiring.md).
 
 `setPolicies` writes the ordered specs and the set `policyId` together.
 Read them back with `getPolicySetSnapshot()`, not `getPolicyAddress()`.

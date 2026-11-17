@@ -267,6 +267,7 @@ logs: [reading-results.md](reading-results.md).
 ## Do not
 
 - Call `newton-cli task submit-evaluation-request`
-- Call `newton-cli policy-client` for submit, status, or wiring
+- Call `newton-cli policy-client` for submit or status (it wires; it does
+  not evaluate)
 - Invent chain IDs, gateway URLs, contract addresses, or a signer
 - Ask the user to paste an API key or private key into chat

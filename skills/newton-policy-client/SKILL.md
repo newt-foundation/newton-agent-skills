@@ -3,11 +3,13 @@ name: newton-policy-client
 description: >-
   Integrate Newton policy enforcement into a Solidity contract you control
   by inheriting NewtonPolicyClient, binding attested intents, validating with
-  _validateAttestationDirect, wiring setPolicies with cast, and submitting
+  _validateAttestationDirect, wiring setPolicies with newton-cli policy-client
+  set-policies, and submitting
   evaluations by signing an EIP-712 intent and POSTing newt_createTask to the
   chain's gateway. Use when adding a PolicyClient to an app contract you can
   change. Do not inherit this mixin on Morpho, Euler, or Superform (use
-  newton-vault-shield). Do not use newton-cli policy-client or newton-cli task.
+  newton-vault-shield). Do not use newton-cli task or newton-cli policy-client
+  for evaluation.
 ---
 
 # Newton PolicyClient
@@ -86,10 +88,10 @@ inspect application
   → add adversarial tests
   → forge build + forge test
   → optional deploy with local key as owner
-  → setPolicies (ordered set, 1–8) via cast (local key)
-  → optional registry registerClient via cast (local key)
+  → newton-cli policy-client set-policies (ordered set, 1–8; local key)
   → setPolicyClientOwner(login wallet) via cast
-  → verify getPolicySetSnapshot
+  → optional newton-cli policy-client register (login wallet signs in browser)
+  → verify with newton-cli policy-client show
   → optional live evaluate: EIP-712 sign + gateway newt_createTask
 ```
 
@@ -191,16 +193,20 @@ After tests pass, if the user asked to deploy:
    set (addresses in order, each `expireAfter`), register txs, and the later
    `setPolicyClientOwner` to the login wallet.
 4. Wait for explicit confirmation.
-5. Deploy, `setPolicies`, optionally register, transfer owner, then verify
-   `getPolicySetSnapshot()`.
+5. Deploy, `set-policies`, transfer owner, optionally register, then verify
+   with `policy-client show`.
 
 Do **not** set the constructor owner to the login wallet. Then `setPolicies`
 would need a dashboard signature this skill cannot produce.
 
-Do **not** use `newton-cli policy-client` or `newton-cli task` for any
-PolicyClient work (deploy, bind, register, ownership, or evaluation). Wire
-with `forge` / `cast`. Evaluate with the gateway procedure in
-[evaluate-intent-direct.md](references/evaluate-intent-direct.md).
+Deploy with `forge`. Bind with `newton-cli policy-client set-policies` and
+read back with `policy-client show` (CLI 0.7.6+; on older CLIs use the `cast`
+form in [deployment-and-wiring.md](references/deployment-and-wiring.md)).
+Transfer contract ownership with `cast send … setPolicyClientOwner`:
+`newton-cli policy-client transfer-ownership` moves only the **registry
+record**, not `getOwner()`. Do **not** use `newton-cli task` or
+`newton-cli policy-client` for evaluation. Evaluate with the gateway
+procedure in [evaluate-intent-direct.md](references/evaluate-intent-direct.md).
 
 ## Ownership transfer is one-way for the local key
 
@@ -211,13 +217,16 @@ Gateway secrets, client-scoped simulate, and `newt_createTask` check
 Required first-time sequence, all signed by the local key:
 
 1. Deploy the client with constructor owner = local `PRIVATE_KEY` address.
-2. `setPolicies` via `cast send` while that key is still owner. Pass the
-   complete ordered set (1–8). Each entry is `(policy, (params, expireAfter))`
-   with `expireAfter > 0`.
-3. Optional `registerClient` on PolicyClientRegistry via `cast send`.
-4. `setPolicyClientOwner(loginWallet)` via `cast send`.
-5. Verify `getOwner()` is the login wallet and `getPolicySetSnapshot()`
-   matches the set. Then `newton-policy` may upload secrets.
+2. `newton-cli policy-client set-policies` while that key is still owner.
+   Pass the complete ordered set (1–8). Each entry is
+   `{ "policy", "params", "expire_after" }` with `expire_after > 0`.
+3. `setPolicyClientOwner(loginWallet)` via `cast send`.
+4. Optional `newton-cli policy-client register`: the login wallet signs
+   `registerClient` in the dashboard, so the registry record is the login
+   wallet from the start. (Registering earlier with the local key via
+   `cast send` also works, but then the registry record must be moved too.)
+5. Verify `getOwner()` is the login wallet and `policy-client show` matches
+   the set. Then `newton-policy` may upload secrets.
 
 Registry `setClientOwner` is **not** that call. It changes the
 PolicyClientRegistry record owner, not PolicyClient `getOwner()`. Secrets,
@@ -246,7 +255,7 @@ Details: [references/deployment-and-wiring.md](references/deployment-and-wiring.
 ## Live evaluate (no newton-cli)
 
 When the user asks for a gateway round-trip, do **not** call
-`newton-cli task` or `newton-cli policy-client`. Follow
+`newton-cli task` or `newton-cli policy-client` to submit or evaluate. Follow
 [references/evaluate-intent-direct.md](references/evaluate-intent-direct.md)
 (this is `@newton-xyz/sdk` `evaluateIntentDirect`):
 

@@ -182,23 +182,41 @@ Record `cast receipt <deployTx> blockNumber`; it is where a history scan
 starts ([reading-results.md](reading-results.md)).
 
 Then the **current** owner (still the local key) replaces the client's
-policy set with one `cast` call. Do not use `newton-cli policy-client`.
-Do not call `setPolicyAddress` or `setPolicy`.
+policy set with one `newton-cli policy-client set-policies` call. Do not
+call `setPolicyAddress` or `setPolicy`.
+
+Write `policies.json`, one entry per policy in evaluation order. `params` is
+the policy's `configs/params.json` object, inlined:
+
+```json
+[
+  { "policy": "0xPOLICY_0", "params": { "max_amount": "10000000000" }, "expire_after": 25 },
+  { "policy": "0xPOLICY_1", "params": {}, "expire_after": 25 }
+]
+```
+
+```bash
+newton-cli policy-client set-policies --client "$POLICY_CLIENT" --policies policies.json
+newton-cli policy-client show --client "$POLICY_CLIENT" --format json
+```
+
+`set-policies` signs with `PRIVATE_KEY` from the environment, encodes each
+`params` as UTF-8 JSON bytes, and prints the tx hash and new `policyId`.
+Keys are exactly `policy`, `params`, `expire_after` (snake_case). `show`
+reads `getPolicySetSnapshot()` (`--format table` for humans).
+
+On a CLI older than 0.7.6 (no `set-policies`), the `cast` equivalent is:
 
 ```bash
 PARAMS_0=$(cast from-utf8 "$(cat policies/first/configs/params.json)")
-PARAMS_1=$(cast from-utf8 "$(cat policies/second/configs/params.json)")
 cast send "$POLICY_CLIENT" \
   'setPolicies((address,(bytes,uint32))[])' \
-  "[($POLICY_0,($PARAMS_0,<blocks>)),($POLICY_1,($PARAMS_1,<blocks>))]" \
+  "[($POLICY_0,($PARAMS_0,<blocks>))]" \
   --rpc-url "$RPC_URL" --private-key "$PRIVATE_KEY"
-cast call "$POLICY_CLIENT" \
-  'getPolicySetSnapshot()(bytes32,uint64,(address,(bytes,uint32))[])' \
-  --rpc-url "$RPC_URL"
 ```
 
 One policy uses a one-element array. The set is ordered, length 1–8.
-Each `expireAfter` is in blocks and must be greater than 0. Ask for the
+Each `expire_after` is in blocks and must be greater than 0. Ask for the
 window if the user has not supplied one. Params bytes must match that
 policy's schema and stay at or under 65,536 bytes. Each address must be a
 policy the TaskManager's factory returns from `isPolicy`. Do not sort or
@@ -209,8 +227,8 @@ transaction. A second call replaces the set again and bumps
 `policyRevision` even when the specs are unchanged. Old attestations stop
 matching `getPolicyId()`.
 
-Finish **all** owner-only client writes (`setPolicies` and optional
-register below) before transferring ownership. After transfer, the local
+Finish **all** owner-only client writes (`setPolicies`) before
+transferring ownership. After transfer, the local
 key can no longer call them. The new owner can.
 
 Before you transfer, run every allow and deny case through `newton-cli policy
@@ -225,12 +243,30 @@ contracts hold the client's address immutably, they need redeploying too.
 `INewtonPolicyClient` in PolicyClientRegistry.
 
 Register when identity linking is in scope, or when the user asks for
-registry presence:
+registry presence. Preferred: after `setPolicyClientOwner(loginWallet)`,
+let the login wallet register it, so the registry record matches
+`getOwner()` with no second transfer:
+
+```bash
+newton-cli login
+newton-cli --chain-id "$CHAIN_ID" policy-client register --client 0xCLIENT
+```
+
+The CLI opens the dashboard; the **user** signs `registerClient` with the
+login wallet in the browser. The CLI polls `isRegisteredClient` for up to 5
+minutes and prints the link if no browser opens. Never sign for the user.
+The registry defaults to the embedded deployment for `--chain-id`
+(`--registry` overrides).
+
+Alternative, before the ownership transfer, with the local key:
 
 ```bash
 cast send 0xREGISTRY "registerClient(address)" 0xCLIENT \
   --rpc-url "$RPC_URL" --private-key "$PRIVATE_KEY"
 ```
+
+That record names the local key; move it with registry `setClientOwner`
+when you transfer contract ownership (below).
 
 Verify:
 
@@ -246,7 +282,8 @@ cast call 0xREGISTRY "getClientRecord(address)" 0xCLIENT --rpc-url "$RPC_URL"
 | `cast send … setClientOwner(client, loginWallet)` on the registry | PolicyClientRegistry record owner | Identity linking directory |
 
 Do not use registry `setClientOwner` as a substitute for
-`setPolicyClientOwner`.
+`setPolicyClientOwner`. `newton-cli policy-client transfer-ownership` is the
+registry call, so it is not a substitute either.
 
 The two owners can diverge if you transfer one and not the other. After
 `setPolicyClientOwner`, `getOwner()` is the login wallet but the registry
@@ -260,8 +297,8 @@ If it was never registered, skip registry `setClientOwner`.
 
 ## Transfer PolicyClient owner to the login wallet
 
-After bind (and optional register), transfer contract ownership while the
-local key can still sign:
+After bind, transfer contract ownership while the local key can still
+sign:
 
 ```bash
 cast send 0xCLIENT "setPolicyClientOwner(address)" 0xLOGIN_WALLET \
@@ -323,7 +360,7 @@ Then write `client-handoff.json` ([handoff.md](handoff.md)).
 After wiring, if the user asked for a gateway round-trip, sign the intent
 (EIP-712) and POST `newt_createTask` to the chain's gateway. Procedure:
 [evaluate-intent-direct.md](evaluate-intent-direct.md). Do not use
-`newton-cli task` or `newton-cli policy-client`.
+`newton-cli task` or `newton-cli policy-client` for evaluation.
 
 ## Credentials
 
