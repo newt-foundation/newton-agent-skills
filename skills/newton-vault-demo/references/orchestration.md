@@ -47,8 +47,8 @@ Policy. That was the pre-0.7 composite. Deploy or reuse one Policy per pack.
 The shield owner then calls `setPolicies` with those addresses in brief
 order (max 8).
 
-Install `@newton-xyz/policy-pack-<id>` for each id when the attach script
-still imports a pack module. [send-call.ts](../../newton-vault-shield/templates/send-call.ts)
+Install `@newton-xyz/policy-packs` when the attach script still imports
+a pack module — every pack id is a subpath of the one umbrella package. [send-call.ts](../../newton-vault-shield/templates/send-call.ts)
 branches on pack id for a single-policy attach.
 
 ## Order

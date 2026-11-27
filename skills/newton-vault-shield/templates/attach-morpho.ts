@@ -9,14 +9,14 @@
  * `newton-vault-demo/templates/run-morpho-e2e.ts` instead of filling this
  * skeleton.
  *
- * Extra packs: pnpm add @newton-xyz/policy-pack-<id> and .with(thatModule)
+ * Extra packs: import the module from '@newton-xyz/policy-packs/<id>' (all packs ship in the one umbrella package) and .with(thatModule)
  * in the same order as handoff.packs[]. Morpho peers:
  *   pnpm add @morpho-org/blue-sdk @morpho-org/blue-sdk-viem @morpho-org/morpho-ts
  */
 import { readFileSync, writeFileSync } from 'node:fs'
 import { definePolicy, createShield } from '@newton-xyz/vaultkit'
 import { morphoActions } from '@newton-xyz/vaultkit/vendors/morpho'
-import { vaultsfyi } from '@newton-xyz/policy-pack-vaultsfyi'
+import { vaultsfyi } from '@newton-xyz/policy-packs/vaultsfyi'
 import {
   createWalletClient,
   http,
