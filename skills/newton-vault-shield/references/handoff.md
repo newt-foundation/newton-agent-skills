@@ -22,9 +22,10 @@ If VaultKit still calls `getPolicyData()` and that call reverts on a 0.7
 policy, stop and report the friction. Do not deploy a pre-0.7 composite
 Policy to satisfy it.
 
-Install `@newton-xyz/policy-pack-<id>` for each pack id. If the npm package
-does not exist, **stop** — do not vendor pack source from
-`newton-policy-packs`.
+Install `@newton-xyz/policy-packs` — every pack ships in the one umbrella
+package, one subpath per pack id (`@newton-xyz/policy-packs/<id>`). If a
+pack id has no subpath in the umbrella, **stop** — do not vendor pack
+source from `newton-policy-packs`.
 
 `functionSignature` on a later `sendCall` must match the policy intent
 byte-for-byte (named UTF-8 from `intent.json` when the policy was authored

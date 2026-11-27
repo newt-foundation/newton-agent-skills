@@ -10,8 +10,8 @@
 import { readFileSync, writeFileSync } from 'node:fs'
 import { definePolicy, createShield } from '@newton-xyz/vaultkit'
 import { morphoActions } from '@newton-xyz/vaultkit/vendors/morpho'
-import { chainalysis } from '@newton-xyz/policy-pack-chainalysis'
-import { vaultsfyi } from '@newton-xyz/policy-pack-vaultsfyi'
+import { chainalysis } from '@newton-xyz/policy-packs/chainalysis'
+import { vaultsfyi } from '@newton-xyz/policy-packs/vaultsfyi'
 import { MetaMorphoAction } from '@morpho-org/blue-sdk-viem'
 import {
   createPublicClient,

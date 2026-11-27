@@ -11,12 +11,12 @@ Node 22+. Do not vendor these packages into the skills repo.
 pnpm add @newton-xyz/vaultkit @newton-xyz/policy-core viem zod
 ```
 
-Add one published pack package per `packs[].id` on the handoff, for
-example:
+All packs ship in the single umbrella package — install it once,
+whatever `packs[].id` lists, and import each pack from its subpath
+(`@newton-xyz/policy-packs/<id>`):
 
 ```bash
-pnpm add @newton-xyz/policy-pack-vaultsfyi
-pnpm add @newton-xyz/policy-pack-chainalysis
+pnpm add @newton-xyz/policy-packs
 ```
 
 Vendor overlays are optional peer dependencies. Morpho typed actions need:
@@ -35,7 +35,7 @@ manifest helpers live in `@newton-xyz/policy-core`.
 
 ```typescript
 import { definePolicy } from '@newton-xyz/vaultkit'
-import { vaultsfyi } from '@newton-xyz/policy-pack-vaultsfyi'
+import { vaultsfyi } from '@newton-xyz/policy-packs/vaultsfyi'
 
 const policy = definePolicy({
   chainId: String(handoff.chainId),

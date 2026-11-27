@@ -12,9 +12,9 @@
  */
 import { readFileSync } from 'node:fs'
 import { createShield, definePolicy } from '@newton-xyz/vaultkit'
-import { chainalysis } from '@newton-xyz/policy-pack-chainalysis'
-import { vaultsfyi } from '@newton-xyz/policy-pack-vaultsfyi'
-import { webacy } from '@newton-xyz/policy-pack-webacy'
+import { chainalysis } from '@newton-xyz/policy-packs/chainalysis'
+import { vaultsfyi } from '@newton-xyz/policy-packs/vaultsfyi'
+import { webacy } from '@newton-xyz/policy-packs/webacy'
 import {
   createWalletClient,
   getAddress,
